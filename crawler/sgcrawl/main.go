@@ -33,7 +33,7 @@ import (
 )
 
 const ua = "MySearchBot/0.1 (hobby search engine; obeys robots.txt)"
-const tunnelFile = "https://raw.githubusercontent.com/Luishae07/random-stuff/main/tunnel-url.txt"
+const tunnelFile = "https://raw.githubusercontent.com/Luishae07/flowsearch/main/tunnel-url.txt"
 
 // the English crawl also keeps pages addressed as German (/de/ ...), so German pages on .com sites are not lost
 var germanOnly bool

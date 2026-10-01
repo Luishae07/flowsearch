@@ -1,4 +1,4 @@
-// sgcrawl is SG225's crawler, written in Go so it uses every core and thousands of connections.
+// sgcrawl is Flowsearch's crawler, written in Go so it uses every core and thousands of connections.
 //
 //	sgcrawl [-hours 2] [-workers 600] [-delay 50ms]
 //
@@ -248,15 +248,22 @@ func main() {
 		germanOnly = true
 	}
 
-	if st, err := os.Stat("sgcrawl.log"); err == nil && st.Size() > 20<<20 {
-		os.Remove("sgcrawl.log")
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		// a one-shot Actions run: log straight to stdout so the run's own log shows what happened,
+		// instead of into a file nobody on that ephemeral runner will ever read.
+		log.SetOutput(os.Stdout)
+		log.SetFlags(log.Ltime)
+	} else {
+		if st, err := os.Stat("sgcrawl.log"); err == nil && st.Size() > 20<<20 {
+			os.Remove("sgcrawl.log")
+		}
+		lf, err := os.OpenFile("sgcrawl.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(lf)
+		log.SetFlags(log.Ldate | log.Ltime)
 	}
-	lf, err := os.OpenFile("sgcrawl.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.SetOutput(lf)
-	log.SetFlags(log.Ldate | log.Ltime)
 
 	home, _ := os.UserHomeDir()
 	tpath := home + "/.mysearch_token"

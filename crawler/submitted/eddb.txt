@@ -1,4 +1,0 @@
-shortypower.org
-sonde.mine.nu
-shortypower.org	https://shortypower.org/sitemap.xml
-sonde.mine.nu	https://sonde.mine.nu/sitemap.xml

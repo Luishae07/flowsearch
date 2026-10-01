@@ -1,0 +1,26 @@
+name: Flowsearch crawl - fogcam.org
+on:
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: build
+        working-directory: crawler
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sgcrawl-bin ./sgcrawl
+      - name: crawl
+        working-directory: crawler
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL=$(cat ../tunnel-url.txt)
+          echo "$MYSEARCH_TOKEN" > token.txt
+          ./sgcrawl-bin -lang en -seeds sites/fogcam.org.txt \
+            -ingest "$URL/api/ingest" -token-file token.txt \
+            -workers 20 -hours 1 -maxpages 5000

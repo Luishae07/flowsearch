@@ -1,0 +1,31 @@
+name: SG225 crawl
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      matrix:
+        lang: [en, de]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: build
+        working-directory: crawler
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sgcrawl ./sgcrawl
+      - name: crawl
+        working-directory: crawler
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL=$(cat ../tunnel-url.txt)
+          echo "$MYSEARCH_TOKEN" > token.txt
+          ./sgcrawl -lang ${{ matrix.lang }} -seeds seeds-${{ matrix.lang }}.txt \
+            -ingest "$URL/api/ingest" -token-file token.txt \
+            -workers 150 -hours 5.5

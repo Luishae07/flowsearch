@@ -1,0 +1,54 @@
+name: Flowsearch crawl - eddb
+on:
+  workflow_dispatch:
+
+jobs:
+  en:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: test -f crawler/submitted/eddb.txt
+      - name: build
+        working-directory: crawler
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sgcrawl-bin ./sgcrawl
+      - name: crawl
+        working-directory: crawler
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL=$(cat ../tunnel-url.txt)
+          echo "$MYSEARCH_TOKEN" > token.txt
+          ./sgcrawl-bin -lang en -seeds submitted/eddb.txt \
+            -ingest "$URL/api/ingest" -token-file token.txt \
+            -workers 50 -hours 1 -maxpages 5000
+
+  de:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - id: has
+        run: echo "ok=$(test -f crawler/submitted-de/eddb.txt && echo yes || echo no)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-go@v5
+        if: steps.has.outputs.ok == 'yes'
+        with:
+          go-version: '1.22'
+      - name: build
+        if: steps.has.outputs.ok == 'yes'
+        working-directory: crawler
+        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sgcrawl-bin ./sgcrawl
+      - name: crawl
+        if: steps.has.outputs.ok == 'yes'
+        working-directory: crawler
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL=$(cat ../tunnel-url.txt)
+          echo "$MYSEARCH_TOKEN" > token.txt
+          ./sgcrawl-bin -lang de -seeds submitted-de/eddb.txt \
+            -ingest "$URL/api/ingest" -token-file token.txt \
+            -workers 50 -hours 1 -maxpages 5000

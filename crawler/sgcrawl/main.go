@@ -238,7 +238,7 @@ func main() {
 	seedsFile := flag.String("seeds", "", "crawl only the sites in this file (one per line), not the built-in lists")
 	watch := flag.Bool("watch", false, "with -seeds: keep running and crawl new sites as they are added to the file")
 	flag.IntVar(&maxPages, "maxpages", 0, "stop after this many pages from one site (0 = no limit)")
-	lang := flag.String("lang", "en", "keep pages in this language: en, or de (German domains .de .at .ch .li)")
+	lang := flag.String("lang", "en", "keep pages in this language: en, de, or any (no language filter - webmaster-submitted sites)")
 	flag.Parse()
 	if *lang == "de-site" { // a site its owner says is German: judge by the text, not the address
 		langOK = sgpack.IsGermanText
@@ -246,6 +246,9 @@ func main() {
 	if *lang == "de" {
 		langOK = sgpack.IsGerman
 		germanOnly = true
+	}
+	if *lang == "any" { // a webmaster asked for their own site specifically: keep everything, don't filter
+		langOK = func(u, t, d, x string) bool { return true }
 	}
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {

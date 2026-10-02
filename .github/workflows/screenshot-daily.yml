@@ -68,7 +68,7 @@ jobs:
         run: |
           git config user.email "bot@local"
           git config user.name "sg225-bot"
-          git pull --rebase
+          git pull --rebase --autostash
           git add screenshots/*.png
           git commit -m "Daily screenshot of ${{ matrix.site }}" || echo "nothing to commit"
           git push

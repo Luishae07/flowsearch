@@ -1,0 +1,74 @@
+name: Flowsearch daily screenshots (Playwright + Firefox)
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: build
+        run: |
+          echo "matrix=$(python3 -c "
+          import json, os
+          sites = []
+          d = 'crawler/sites'
+          if os.path.isdir(d):
+              for name in sorted(os.listdir(d)):
+                  if name.endswith('.txt'):
+                      sites.append(name[:-4])
+          print(json.dumps({'site': sites}))
+          ")" >> "$GITHUB_OUTPUT"
+
+  screenshot:
+    needs: discover
+    if: needs.discover.outputs.matrix != '{"site":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    strategy:
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: install playwright
+        run: |
+          npm init -y >/dev/null
+          npm install playwright >/dev/null
+          npx playwright install --with-deps firefox
+      - name: screenshot
+        run: |
+          mkdir -p screenshots
+          node - <<'EOF'
+          const { firefox } = require('playwright');
+          (async () => {
+            const site = process.env.SITE;
+            const browser = await firefox.launch();
+            const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+            try {
+              await page.goto('https://' + site + '/', { waitUntil: 'load', timeout: 20000 });
+            } catch (e) {
+              console.log('nav error (still screenshotting whatever loaded):', e.message);
+            }
+            await page.screenshot({ path: 'screenshots/' + site + '.png' });
+            await browser.close();
+          })();
+          EOF
+        env:
+          SITE: ${{ matrix.site }}
+      - name: commit screenshot
+        run: |
+          git config user.email "bot@local"
+          git config user.name "sg225-bot"
+          git pull --rebase
+          git add screenshots/*.png
+          git commit -m "Daily screenshot of ${{ matrix.site }}" || echo "nothing to commit"
+          git push

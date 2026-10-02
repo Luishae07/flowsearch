@@ -17,11 +17,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: install playwright
+      - name: install playwright npm package
         run: |
           npm init -y >/dev/null
           npm install playwright >/dev/null
-          npx playwright install --with-deps firefox
+      - name: cache playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-firefox-${{ runner.os }}
+      - name: install firefox browser (only on cache miss)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps firefox
+      - name: install firefox OS deps (always needed, cache only covers the browser binary)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps firefox
       - name: screenshot
         run: |
           mkdir -p screenshots
@@ -46,6 +57,7 @@ jobs:
         run: |
           git config user.email "bot@local"
           git config user.name "sg225-bot"
+          git pull --rebase --autostash
           git add screenshots/*.png
           git commit -m "Screenshot of ${{ github.event.inputs.site }}" || echo "nothing to commit"
           git push

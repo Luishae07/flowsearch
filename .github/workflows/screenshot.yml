@@ -27,6 +27,11 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-firefox-${{ runner.os }}
+      - name: cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-firefox-deps-${{ runner.os }}
       - name: install firefox browser (only on cache miss)
         if: steps.pw-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps firefox

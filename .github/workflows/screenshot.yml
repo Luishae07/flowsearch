@@ -1,0 +1,49 @@
+name: Flowsearch site screenshot (Playwright + Firefox)
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "The site to screenshot (hostname, e.g. example.com) - the one the webmaster is currently viewing"
+        required: true
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: install playwright
+        run: |
+          npm init -y >/dev/null
+          npm install playwright >/dev/null
+          npx playwright install --with-deps firefox
+      - name: screenshot
+        run: |
+          mkdir -p screenshots
+          node - <<'EOF'
+          const { firefox } = require('playwright');
+          (async () => {
+            const site = process.env.SITE;
+            const browser = await firefox.launch();
+            const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+            try {
+              await page.goto('https://' + site + '/', { waitUntil: 'load', timeout: 20000 });
+            } catch (e) {
+              console.log('nav error (still screenshotting whatever loaded):', e.message);
+            }
+            await page.screenshot({ path: 'screenshots/' + site + '.png' });
+            await browser.close();
+          })();
+          EOF
+        env:
+          SITE: ${{ github.event.inputs.site }}
+      - name: commit screenshot
+        run: |
+          git config user.email "bot@local"
+          git config user.name "sg225-bot"
+          git add screenshots/*.png
+          git commit -m "Screenshot of ${{ github.event.inputs.site }}" || echo "nothing to commit"
+          git push

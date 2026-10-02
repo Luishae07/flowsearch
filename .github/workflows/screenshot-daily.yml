@@ -78,6 +78,15 @@ jobs:
       - name: upload screenshot to Hugging Face
         run: |
           pip install -q huggingface_hub
-          huggingface-cli upload Luishae0705/flowsearch-screenshots "screenshots/${{ matrix.site }}.png" "${{ matrix.site }}.png" --repo-type dataset --token "$HF_TOKEN"
+          python3 -c "
+          from huggingface_hub import HfApi
+          import os
+          HfApi(token=os.environ['HF_TOKEN']).upload_file(
+              path_or_fileobj='screenshots/${{ matrix.site }}.png',
+              path_in_repo='${{ matrix.site }}.png',
+              repo_id='Luishae0705/flowsearch-screenshots',
+              repo_type='dataset',
+          )
+          "
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

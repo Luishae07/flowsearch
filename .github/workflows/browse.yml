@@ -33,12 +33,29 @@ jobs:
         with:
           path: /var/cache/apt/archives
           key: apt-firefox-deps-${{ runner.os }}
+      - name: cache firefox OS library files
+        id: osdeps-cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/osdeps.tar.zst
+          key: osdeps-firefox-${{ runner.os }}-v1
       - name: install firefox browser (only on cache miss)
         if: steps.pw-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps firefox
-      - name: install firefox OS deps (always needed, cache only covers the browser binary)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps firefox
+      - name: install + snapshot firefox OS deps (first time only)
+        if: steps.pw-cache.outputs.cache-hit == 'true' && steps.osdeps-cache.outputs.cache-hit != 'true'
+        run: |
+          before=$(dpkg -l | awk '{print $2}' | sort)
+          npx playwright install-deps firefox
+          after=$(dpkg -l | awk '{print $2}' | sort)
+          for p in $(comm -13 <(echo "$before") <(echo "$after")); do dpkg -L "$p"; done \
+            | sort -u | while read -r f; do [ -f "$f" ] && echo "$f"; done > /tmp/osdeps-files.txt
+          tar --zstd -cf /tmp/osdeps.tar.zst -T /tmp/osdeps-files.txt
+      - name: restore firefox OS deps from cache (skips apt entirely)
+        if: steps.osdeps-cache.outputs.cache-hit == 'true'
+        run: |
+          sudo tar --zstd -xf /tmp/osdeps.tar.zst -C /
+          sudo ldconfig
       - name: run interactive session
         env:
           SITE: ${{ github.event.inputs.site }}

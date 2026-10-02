@@ -75,15 +75,9 @@ jobs:
           EOF
         env:
           SITE: ${{ matrix.site }}
-      - name: commit screenshot
+      - name: upload screenshot to Hugging Face
         run: |
-          git config user.email "bot@local"
-          git config user.name "sg225-bot"
-          git add screenshots/*.png
-          git commit -m "Daily screenshot of ${{ matrix.site }}" || echo "nothing to commit"
-          # many matrix jobs push to the same branch at once; retry on race losses instead of failing outright
-          for i in 1 2 3 4 5; do
-            git pull --rebase --autostash && git push && break
-            echo "push attempt $i failed, retrying..."
-            sleep $((RANDOM % 10 + 1))
-          done
+          pip install -q huggingface_hub
+          huggingface-cli upload Luishae0705/flowsearch-screenshots "screenshots/${{ matrix.site }}.png" "${{ matrix.site }}.png" --repo-type dataset --token "$HF_TOKEN"
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}

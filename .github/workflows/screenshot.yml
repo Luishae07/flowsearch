@@ -57,7 +57,10 @@ jobs:
         run: |
           git config user.email "bot@local"
           git config user.name "sg225-bot"
-          git pull --rebase --autostash
           git add screenshots/*.png
           git commit -m "Screenshot of ${{ github.event.inputs.site }}" || echo "nothing to commit"
-          git push
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash && git push && break
+            echo "push attempt $i failed, retrying..."
+            sleep $((RANDOM % 10 + 1))
+          done

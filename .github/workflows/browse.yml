@@ -1,0 +1,97 @@
+name: Flowsearch "Try website" interactive session
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Site to open (hostname)"
+        required: true
+      session:
+        description: "Browse session id (from the webmaster page)"
+        required: true
+
+jobs:
+  browse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: install playwright npm package
+        run: |
+          npm init -y >/dev/null
+          npm install playwright >/dev/null
+      - name: cache playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-firefox-${{ runner.os }}
+      - name: cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-firefox-deps-${{ runner.os }}
+      - name: install firefox browser (only on cache miss)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps firefox
+      - name: install firefox OS deps (always needed, cache only covers the browser binary)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps firefox
+      - name: run interactive session
+        env:
+          SITE: ${{ github.event.inputs.site }}
+          SESSION: ${{ github.event.inputs.session }}
+          TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          SERVER=$(cat tunnel-url.txt)
+          node - <<'EOF'
+          const { firefox } = require('playwright');
+          const site = process.env.SITE, session = process.env.SESSION, token = process.env.TOKEN;
+          const server = require('fs').readFileSync('tunnel-url.txt', 'utf8').trim();
+
+          async function post(path, opts) {
+            const res = await fetch(server + path, { ...opts, headers: { Authorization: 'Bearer ' + token, ...(opts && opts.headers) } });
+            return res;
+          }
+
+          (async () => {
+            const browser = await firefox.launch();
+            const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+            let curURL = 'https://' + site + '/';
+            try { await page.goto(curURL, { waitUntil: 'load', timeout: 20000 }); } catch (e) { console.log('nav error:', e.message); }
+            curURL = page.url();
+
+            const deadline = Date.now() + 9 * 60 * 1000;
+            while (Date.now() < deadline) {
+              let shot;
+              try { shot = await page.screenshot(); } catch (e) { break; }
+              await post('/webmaster/browse/frame?session=' + session, {
+                method: 'POST', headers: { 'X-URL': curURL, 'Content-Type': 'image/png' }, body: shot,
+              });
+
+              let cmd = { type: 'none' };
+              try {
+                const r = await post('/webmaster/browse/poll?session=' + session, { method: 'GET' });
+                cmd = await r.json();
+              } catch (e) {}
+
+              if (cmd.type === 'stop') break;
+              if (cmd.type === 'nav' && cmd.url) {
+                let target = cmd.url;
+                if (!/^https?:\/\//.test(target)) target = 'https://' + target;
+                try { await page.goto(target, { waitUntil: 'load', timeout: 20000 }); } catch (e) { console.log('nav error:', e.message); }
+                curURL = page.url();
+              } else if (cmd.type === 'click') {
+                try {
+                  await page.mouse.click(cmd.x * 1280, cmd.y * 800);
+                  await page.waitForTimeout(600);
+                } catch (e) {}
+                curURL = page.url();
+              }
+              await page.waitForTimeout(500);
+            }
+            await browser.close();
+          })();
+          EOF

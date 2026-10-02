@@ -26,4 +26,4 @@ jobs:
           echo "$MYSEARCH_TOKEN" > token.txt
           ./sgcrawl-bin -lang ${{ matrix.job.lang }} -seeds ${{ matrix.job.seeds }} \
             -ingest "$URL/api/ingest" -token-file token.txt \
-            -workers 150 -hours 5.5
+            -workers 400 -delay 20ms -hours 5.5

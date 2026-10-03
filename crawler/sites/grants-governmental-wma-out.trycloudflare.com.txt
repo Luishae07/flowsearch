@@ -1,1 +1,1 @@
-grants-governmental-wma-out.trycloudflare.com	https://grants-governmental-wma-out.trycloudflare.com/sitemap.xml
+grants-governmental-wma-out.trycloudflare.com

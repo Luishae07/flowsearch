@@ -1,0 +1,107 @@
+name: AI explores a submitted site
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Site to explore (hostname)"
+        required: true
+      user:
+        description: "Webmaster account that submitted it"
+        required: true
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: install ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: start ollama and pull a small model
+        run: |
+          ollama serve &
+          sleep 3
+          ollama pull llama3.2:3b
+      - name: explore and summarize
+        env:
+          SITE: ${{ github.event.inputs.site }}
+          USERNAME: ${{ github.event.inputs.user }}
+          TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          SERVER=$(cat web-tunnel-url.txt)
+          python3 - <<'PYEOF'
+          import os, re, json, urllib.request, html as html_mod
+
+          site = os.environ["SITE"]
+          server = open("web-tunnel-url.txt").read().strip()
+          token = os.environ["TOKEN"]
+          username = os.environ["USERNAME"]
+
+          def fetch(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (FlowsearchAIExplorer)"})
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as r:
+                      return r.read(400_000).decode("utf-8", errors="ignore")
+              except Exception as e:
+                  return ""
+
+          def extract(html_text):
+              title_m = re.search(r"<title[^>]*>(.*?)</title>", html_text, re.I | re.S)
+              title = html_mod.unescape(title_m.group(1).strip()) if title_m else ""
+              text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", html_text, flags=re.S | re.I)
+              text = re.sub(r"<[^>]+>", " ", text)
+              text = html_mod.unescape(text)
+              text = re.sub(r"\s+", " ", text).strip()
+              links = re.findall(r'href=["\']([^"\']+)["\']', html_text, re.I)
+              return title, text[:3000], links[:30]
+
+          pages = []
+          base = "https://" + site
+          home = fetch(base + "/")
+          title, text, links = extract(home)
+          pages.append((base + "/", title, text))
+
+          # follow one promising-looking internal link for a second page of context
+          for l in links:
+              if l.startswith("/") and len(l) > 1 and not l.startswith("//"):
+                  second = fetch(base + l)
+                  if second:
+                      t2, x2, _ = extract(second)
+                      pages.append((base + l, t2, x2))
+                  break
+
+          context = ""
+          for url, t, x in pages:
+              context += f"\nPage: {url}\nTitle: {t}\nText: {x}\n"
+
+          prompt = (
+              "You explored a website by reading its homepage and one linked page. "
+              "Write a short (3-4 sentence) plain-English summary of what the site actually is and does, "
+              "for the site's own webmaster to read. Be specific, not generic. Here is what you saw:\n"
+              + context
+          )
+
+          req = urllib.request.Request(
+              "http://localhost:11434/api/generate",
+              data=json.dumps({"model": "llama3.2:3b", "prompt": prompt, "stream": False}).encode(),
+              headers={"Content-Type": "application/json"},
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  result = json.loads(r.read())
+                  summary = result.get("response", "").strip()
+          except Exception as e:
+              summary = f"(AI exploration failed: {e})"
+
+          if not summary:
+              summary = "(the model returned nothing)"
+
+          report = urllib.request.Request(
+              server + f"/webmaster/ai-explore/report?site={site}&user={username}",
+              data=summary.encode("utf-8"),
+              headers={"Authorization": "Bearer " + token},
+              method="POST",
+          )
+          urllib.request.urlopen(report, timeout=15)
+          print("reported:", summary)
+          PYEOF

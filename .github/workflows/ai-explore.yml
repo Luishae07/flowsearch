@@ -19,9 +19,9 @@ jobs:
         run: curl -fsSL https://ollama.com/install.sh | sh
       - name: start ollama and pull a small model
         run: |
-          ollama serve &
+          (ollama serve &) 2>/dev/null || true
           sleep 3
-          ollama pull llama3.2:3b
+          ollama pull llama3.2:1b
       - name: explore and summarize
         env:
           SITE: ${{ github.event.inputs.site }}
@@ -87,11 +87,11 @@ jobs:
           for attempt in range(3):
               req = urllib.request.Request(
                   "http://localhost:11434/api/generate",
-                  data=json.dumps({"model": "llama3.2:3b", "prompt": prompt, "stream": False}).encode(),
+                  data=json.dumps({"model": "llama3.2:1b", "prompt": prompt, "stream": False}).encode(),
                   headers={"Content-Type": "application/json"},
               )
               try:
-                  with urllib.request.urlopen(req, timeout=12) as r:
+                  with urllib.request.urlopen(req, timeout=25) as r:
                       result = json.loads(r.read())
                       summary = result.get("response", "").strip()
                   if summary:

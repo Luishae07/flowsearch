@@ -21,6 +21,6 @@ jobs:
         run: |
           URL=$(cat ../tunnel-url.txt)
           echo "$MYSEARCH_TOKEN" > token.txt
-          ./sgcrawl-bin -lang de -seeds sites/jjkincreamtaln.noahboah2812.workers.dev.txt \
+          ./sgcrawl-bin -lang any -seeds sites/jjkincreamtaln.noahboah2812.workers.dev.txt \
             -ingest "$URL/api/ingest" -token-file token.txt \
             -workers 20 -hours 1 -maxpages 5000

@@ -108,6 +108,14 @@ jobs:
                 curURL = page.url();
               } else if (cmd.type === 'scroll') {
                 try { await page.mouse.wheel(0, cmd.dy); } catch (e) {}
+              } else if (cmd.type === 'drag') {
+                try {
+                  await page.mouse.move(cmd.x * 1280, cmd.y * 800);
+                  await page.mouse.down();
+                  await page.mouse.move(cmd.x2 * 1280, cmd.y2 * 800, { steps: 15 });
+                  await page.mouse.up();
+                  await page.waitForTimeout(150);
+                } catch (e) {}
               } else if (cmd.type === 'key' && cmd.text) {
                 try {
                   if (cmd.text.length === 1) await page.keyboard.type(cmd.text);

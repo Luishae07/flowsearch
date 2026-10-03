@@ -83,9 +83,9 @@ jobs:
             const deadline = Date.now() + 9 * 60 * 1000;
             while (Date.now() < deadline) {
               let shot;
-              try { shot = await page.screenshot(); } catch (e) { break; }
+              try { shot = await page.screenshot({ type: 'jpeg', quality: 55 }); } catch (e) { break; }
               await post('/webmaster/browse/frame?session=' + session, {
-                method: 'POST', headers: { 'X-URL': curURL, 'Content-Type': 'image/png' }, body: shot,
+                method: 'POST', headers: { 'X-URL': curURL, 'Content-Type': 'image/jpeg' }, body: shot,
               });
 
               let cmd = { type: 'none' };
@@ -103,11 +103,11 @@ jobs:
               } else if (cmd.type === 'click') {
                 try {
                   await page.mouse.click(cmd.x * 1280, cmd.y * 800);
-                  await page.waitForTimeout(600);
+                  await page.waitForTimeout(250);
                 } catch (e) {}
                 curURL = page.url();
               }
-              await page.waitForTimeout(500);
+              await page.waitForTimeout(150);
             }
             await browser.close();
           })();

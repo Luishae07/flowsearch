@@ -81,17 +81,26 @@ jobs:
               + context
           )
 
-          req = urllib.request.Request(
-              "http://localhost:11434/api/generate",
-              data=json.dumps({"model": "llama3.2:3b", "prompt": prompt, "stream": False}).encode(),
-              headers={"Content-Type": "application/json"},
-          )
-          try:
-              with urllib.request.urlopen(req, timeout=60) as r:
-                  result = json.loads(r.read())
-                  summary = result.get("response", "").strip()
-          except Exception as e:
-              summary = f"(AI exploration failed: {e})"
+          import time
+          summary = ""
+          last_err = None
+          for attempt in range(3):
+              req = urllib.request.Request(
+                  "http://localhost:11434/api/generate",
+                  data=json.dumps({"model": "llama3.2:3b", "prompt": prompt, "stream": False}).encode(),
+                  headers={"Content-Type": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=12) as r:
+                      result = json.loads(r.read())
+                      summary = result.get("response", "").strip()
+                  if summary:
+                      break
+              except Exception as e:
+                  last_err = e
+                  time.sleep(3)
+          if not summary and last_err is not None:
+              summary = f"(AI exploration failed after 3 tries: {last_err})"
 
           if not summary:
               summary = "(the model returned nothing)"

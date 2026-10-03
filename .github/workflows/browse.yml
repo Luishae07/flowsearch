@@ -62,11 +62,11 @@ jobs:
           SESSION: ${{ github.event.inputs.session }}
           TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
-          SERVER=$(cat tunnel-url.txt)
+          SERVER=$(cat web-tunnel-url.txt)
           node - <<'EOF'
           const { firefox } = require('playwright');
           const site = process.env.SITE, session = process.env.SESSION, token = process.env.TOKEN;
-          const server = require('fs').readFileSync('tunnel-url.txt', 'utf8').trim();
+          const server = require('fs').readFileSync('web-tunnel-url.txt', 'utf8').trim();
 
           async function post(path, opts) {
             const res = await fetch(server + path, { ...opts, headers: { Authorization: 'Bearer ' + token, ...(opts && opts.headers) } });

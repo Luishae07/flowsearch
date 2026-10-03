@@ -106,6 +106,13 @@ jobs:
                   await page.waitForTimeout(250);
                 } catch (e) {}
                 curURL = page.url();
+              } else if (cmd.type === 'scroll') {
+                try { await page.mouse.wheel(0, cmd.dy); } catch (e) {}
+              } else if (cmd.type === 'key' && cmd.text) {
+                try {
+                  if (cmd.text.length === 1) await page.keyboard.type(cmd.text);
+                  else await page.keyboard.press(cmd.text);
+                } catch (e) {}
               }
               await page.waitForTimeout(150);
             }

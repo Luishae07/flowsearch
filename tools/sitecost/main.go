@@ -42,6 +42,7 @@ type Site struct {
 	BytesPerVisit int64   `json:"bytes_per_visit,omitempty"`
 	USDPer1000    float64 `json:"usd_per_1000_visits,omitempty"`
 	USDPerHour    float64 `json:"usd_per_hour,omitempty"`
+	USDPer10H     float64 `json:"usd_per_10_hours,omitempty"`
 	JSBytes       int64   `json:"js_bytes,omitempty"`
 	Requests      int     `json:"requests,omitempty"`
 	Basis         string  `json:"basis,omitempty"` // "browser" (JavaScript ran) or "static" (HTML and linked files only)
@@ -133,6 +134,7 @@ func (s *Site) setCost(total int64, egress float64, visits int) {
 	perVisit := float64(total) / 1e9 * egress
 	s.USDPer1000 = round(perVisit*1000, 4)
 	s.USDPerHour = round(perVisit*float64(visits), 4)
+	s.USDPer10H = round(perVisit*float64(visits)*10, 4)
 }
 
 func round(v float64, places int) float64 {
@@ -168,6 +170,21 @@ func main() {
 	files, _ := filepath.Glob(filepath.Join(*root, "crawler", "sites", "*.txt"))
 	for _, f := range files {
 		pages[strings.TrimSuffix(filepath.Base(f), ".txt")] = 0
+	}
+	// more sites: the most popular ones from the crawler's Tranco seed list (TOP_SITES of them, default 100)
+	if f, err := os.ReadFile(filepath.Join(*root, "crawler", "seeds-tranco.txt")); err == nil {
+		want := int(envNum("TOP_SITES", 100))
+		for _, line := range strings.Split(string(f), "\n") {
+			if want <= 0 {
+				break
+			}
+			if h := strings.TrimSpace(line); h != "" {
+				if _, have := pages[h]; !have {
+					pages[h] = 0
+				}
+				want--
+			}
+		}
 	}
 	// the biggest indexed sites, from the live engine (best effort)
 	if resp, body, err := get("https://raw.githubusercontent.com/Luishae07/flowsearch/main/web-tunnel-url.txt", http.MethodGet, 1000); err == nil && resp.StatusCode == 200 {
@@ -243,13 +260,13 @@ func main() {
 
 	var md strings.Builder
 	fmt.Fprintf(&md, "# What a visitor costs each site\n\nBandwidth only, at **$%g/GB** and **%d visits per hour**. Every site's home page is loaded in a real browser with JavaScript running, counting every byte it receives (sites Chrome cannot load fall back to HTML plus up to 25 linked files, marked n/a under JavaScript). Servers, storage and people cost extra.\n\n", egress, visits)
-	md.WriteString("| Site | Page weight | of which JavaScript | Requests | $ per 1,000 visits | $ per hour |\n|---|---:|---:|---:|---:|---:|\n")
+	md.WriteString("| Site | Page weight | of which JavaScript | Requests | $ per 1,000 visits | $ per hour | $ per 10 hours |\n|---|---:|---:|---:|---:|---:|---:|\n")
 	for _, r := range ok {
 		js, reqs := "n/a", r.Assets+1
 		if r.Basis == "browser" {
 			js, reqs = fmt.Sprintf("%d KB", r.JSBytes/1024), r.Requests
 		}
-		fmt.Fprintf(&md, "| %s | %d KB | %s | %d | %.4f | %.4f |\n", r.Host, r.BytesPerVisit/1024, js, reqs, r.USDPer1000, r.USDPerHour)
+		fmt.Fprintf(&md, "| %s | %d KB | %s | %d | %.4f | %.4f | %.4f |\n", r.Host, r.BytesPerVisit/1024, js, reqs, r.USDPer1000, r.USDPerHour, r.USDPer10H)
 	}
 	if len(bad) > 0 {
 		names := make([]string, len(bad))

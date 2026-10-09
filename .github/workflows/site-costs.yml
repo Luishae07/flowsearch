@@ -20,11 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
       - name: Measure every site
         env:
           VISITS_PER_HOUR: ${{ github.event.inputs.visits_per_hour || '1000' }}
           EGRESS_PER_GB: ${{ github.event.inputs.egress_per_gb || '0.085' }}
-        run: python3 tools/site_costs.py
+        run: cd tools/sitecost && go run . -root ../..
       - name: Show the table
         run: cat SITE-COSTS.md >> "$GITHUB_STEP_SUMMARY"
       - name: Commit the result

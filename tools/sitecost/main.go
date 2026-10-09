@@ -8,6 +8,7 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -41,6 +42,9 @@ type Site struct {
 	BytesPerVisit int64   `json:"bytes_per_visit,omitempty"`
 	USDPer1000    float64 `json:"usd_per_1000_visits,omitempty"`
 	USDPerHour    float64 `json:"usd_per_hour,omitempty"`
+	JSBytes       int64   `json:"js_bytes,omitempty"`
+	Requests      int     `json:"requests,omitempty"`
+	Basis         string  `json:"basis,omitempty"` // "browser" (JavaScript ran) or "static" (HTML and linked files only)
 	Error         string  `json:"error,omitempty"`
 }
 
@@ -119,11 +123,16 @@ func measure(host string, egress float64, visits int) Site {
 			s.Assets++
 		}
 	}
+	s.Basis = "static"
+	s.setCost(total, egress, visits)
+	return s
+}
+
+func (s *Site) setCost(total int64, egress float64, visits int) {
 	s.BytesPerVisit = total
 	perVisit := float64(total) / 1e9 * egress
 	s.USDPer1000 = round(perVisit*1000, 4)
 	s.USDPerHour = round(perVisit*float64(visits), 4)
-	return s
 }
 
 func round(v float64, places int) float64 {
@@ -150,6 +159,7 @@ func envNum(name string, def float64) float64 {
 
 func main() {
 	root := flag.String("root", ".", "repo root (holds crawler/sites; the results are written here)")
+	useBrowser := flag.Bool("browser", true, "also load every page in headless Chrome so JavaScript is counted")
 	flag.Parse()
 	egress := envNum("EGRESS_PER_GB", 0.085)
 	visits := int(envNum("VISITS_PER_HOUR", 1000))
@@ -183,7 +193,17 @@ func main() {
 		hosts = append(hosts, h)
 	}
 	sort.Strings(hosts)
+	var browser context.Context
+	if *useBrowser {
+		var stop context.CancelFunc
+		if browser, stop = newBrowser(); browser != nil {
+			defer stop()
+		} else {
+			fmt.Println("Chrome is not available: counting HTML and linked files only")
+		}
+	}
 	rows := make([]Site, len(hosts))
+	browserSem := make(chan struct{}, 3)
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, 8)
 	for i, h := range hosts {
@@ -194,6 +214,16 @@ func main() {
 			defer func() { <-sem }()
 			rows[i] = measure(h, egress, visits)
 			rows[i].PagesIndexed = pages[h]
+			if browser != nil {
+				browserSem <- struct{}{}
+				total, js, n, err := browserMeasure(browser, h)
+				<-browserSem
+				if err == nil && total > 0 {
+					rows[i].Error = ""
+					rows[i].JSBytes, rows[i].Requests, rows[i].Basis = js, n, "browser"
+					rows[i].setCost(total, egress, visits)
+				}
+			}
 		}(i, h)
 	}
 	wg.Wait()
@@ -212,10 +242,14 @@ func main() {
 	os.WriteFile(filepath.Join(*root, "site-costs.json"), out, 0o644)
 
 	var md strings.Builder
-	fmt.Fprintf(&md, "# What a visitor costs each site\n\nBandwidth only, at **$%g/GB** and **%d visits per hour**. Every site's home page is loaded like a browser would (HTML plus up to 25 images, scripts, styles and fonts). Servers, storage and people cost extra.\n\n", egress, visits)
-	md.WriteString("| Site | Page weight | Files | $ per 1,000 visits | $ per hour |\n|---|---:|---:|---:|---:|\n")
+	fmt.Fprintf(&md, "# What a visitor costs each site\n\nBandwidth only, at **$%g/GB** and **%d visits per hour**. Every site's home page is loaded in a real browser with JavaScript running, counting every byte it receives (sites Chrome cannot load fall back to HTML plus up to 25 linked files, marked n/a under JavaScript). Servers, storage and people cost extra.\n\n", egress, visits)
+	md.WriteString("| Site | Page weight | of which JavaScript | Requests | $ per 1,000 visits | $ per hour |\n|---|---:|---:|---:|---:|---:|\n")
 	for _, r := range ok {
-		fmt.Fprintf(&md, "| %s | %d KB | %d | %.4f | %.4f |\n", r.Host, r.BytesPerVisit/1024, r.Assets+1, r.USDPer1000, r.USDPerHour)
+		js, reqs := "n/a", r.Assets+1
+		if r.Basis == "browser" {
+			js, reqs = fmt.Sprintf("%d KB", r.JSBytes/1024), r.Requests
+		}
+		fmt.Fprintf(&md, "| %s | %d KB | %s | %d | %.4f | %.4f |\n", r.Host, r.BytesPerVisit/1024, js, reqs, r.USDPer1000, r.USDPerHour)
 	}
 	if len(bad) > 0 {
 		names := make([]string, len(bad))

@@ -5,6 +5,9 @@ on:
       visits_per_hour:
         description: Assumed visitors per hour
         default: "1000"
+      top_sites:
+        description: How many of the most popular sites to add (from the Tranco list)
+        default: "100"
       egress_per_gb:
         description: Price of one GB sent out (USD)
         default: "0.085"
@@ -27,6 +30,7 @@ jobs:
         env:
           VISITS_PER_HOUR: ${{ github.event.inputs.visits_per_hour || '1000' }}
           EGRESS_PER_GB: ${{ github.event.inputs.egress_per_gb || '0.085' }}
+          TOP_SITES: ${{ github.event.inputs.top_sites || '100' }}
         run: cd tools/sitecost && go run . -root ../..
       - name: Show the table
         run: cat SITE-COSTS.md >> "$GITHUB_STEP_SUMMARY"

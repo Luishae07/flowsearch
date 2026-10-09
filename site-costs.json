@@ -2,170 +2,234 @@
  "egress_usd_per_gb": 0.085,
  "sites": [
   {
+   "host": "opencode.ai",
+   "html_bytes": 14614,
+   "bytes_per_visit": 10816267,
+   "usd_per_1000_visits": 0.9194,
+   "usd_per_hour": 0.9194,
+   "js_bytes": 335093,
+   "requests": 38,
+   "basis": "browser"
+  },
+  {
+   "host": "gemini.google.com",
+   "html_bytes": 127712,
+   "assets": 5,
+   "bytes_per_visit": 6257975,
+   "usd_per_1000_visits": 0.5319,
+   "usd_per_hour": 0.5319,
+   "js_bytes": 4164649,
+   "requests": 120,
+   "basis": "browser"
+  },
+  {
+   "host": "roblox.com",
+   "html_bytes": 17325,
+   "assets": 9,
+   "bytes_per_visit": 6165539,
+   "usd_per_1000_visits": 0.5241,
+   "usd_per_hour": 0.5241,
+   "js_bytes": 3808276,
+   "requests": 225,
+   "basis": "browser"
+  },
+  {
+   "host": "youtube.com",
+   "html_bytes": 268663,
+   "assets": 16,
+   "bytes_per_visit": 4066207,
+   "usd_per_1000_visits": 0.3456,
+   "usd_per_hour": 0.3456,
+   "js_bytes": 3130326,
+   "requests": 47,
+   "basis": "browser"
+  },
+  {
+   "host": "github.com",
+   "html_bytes": 117528,
+   "assets": 25,
+   "bytes_per_visit": 3947598,
+   "usd_per_1000_visits": 0.3355,
+   "usd_per_hour": 0.3355,
+   "js_bytes": 1875625,
+   "requests": 160,
+   "basis": "browser"
+  },
+  {
    "host": "huggingface.co",
-   "html_bytes": 28376,
+   "html_bytes": 28393,
    "assets": 8,
-   "bytes_per_visit": 1289345,
-   "usd_per_1000_visits": 0.1096,
-   "usd_per_hour": 0.1096
+   "bytes_per_visit": 3284653,
+   "usd_per_1000_visits": 0.2792,
+   "usd_per_hour": 0.2792,
+   "js_bytes": 754503,
+   "requests": 63,
+   "basis": "browser"
+  },
+  {
+   "host": "stackoverflow.com",
+   "html_bytes": 3139,
+   "bytes_per_visit": 3268351,
+   "usd_per_1000_visits": 0.2778,
+   "usd_per_hour": 0.2778,
+   "js_bytes": 864137,
+   "requests": 388,
+   "basis": "browser"
   },
   {
    "host": "qwen.ai",
    "html_bytes": 27437,
-   "assets": 25,
-   "bytes_per_visit": 616343,
-   "usd_per_1000_visits": 0.0524,
-   "usd_per_hour": 0.0524
+   "assets": 24,
+   "bytes_per_visit": 2290899,
+   "usd_per_1000_visits": 0.1947,
+   "usd_per_hour": 0.1947,
+   "js_bytes": 757299,
+   "requests": 76,
+   "basis": "browser"
   },
   {
-   "host": "github.com",
-   "html_bytes": 117526,
-   "assets": 25,
-   "bytes_per_visit": 606648,
-   "usd_per_1000_visits": 0.0516,
-   "usd_per_hour": 0.0516
-  },
-  {
-   "host": "jjkincreamtaln.noahboah2812.workers.dev",
-   "html_bytes": 18944,
+   "host": "claude.com",
+   "html_bytes": 89224,
    "assets": 1,
-   "bytes_per_visit": 548580,
-   "usd_per_1000_visits": 0.0466,
-   "usd_per_hour": 0.0466
+   "bytes_per_visit": 1632229,
+   "usd_per_1000_visits": 0.1387,
+   "usd_per_hour": 0.1387,
+   "js_bytes": 709918,
+   "requests": 52,
+   "basis": "browser"
   },
   {
-   "host": "youtube.com",
-   "html_bytes": 246395,
-   "assets": 16,
-   "bytes_per_visit": 344651,
-   "usd_per_1000_visits": 0.0293,
-   "usd_per_hour": 0.0293
-  },
-  {
-   "host": "palera.in",
-   "html_bytes": 5037,
-   "assets": 5,
-   "bytes_per_visit": 339819,
-   "usd_per_1000_visits": 0.0289,
-   "usd_per_hour": 0.0289
-  },
-  {
-   "host": "roblox.com",
-   "html_bytes": 19554,
-   "assets": 24,
-   "bytes_per_visit": 315849,
-   "usd_per_1000_visits": 0.0268,
-   "usd_per_hour": 0.0268
-  },
-  {
-   "host": "shortypower.org",
-   "html_bytes": 4447,
-   "assets": 24,
-   "bytes_per_visit": 223933,
-   "usd_per_1000_visits": 0.019,
-   "usd_per_hour": 0.019
-  },
-  {
-   "host": "gemini.google.com",
-   "html_bytes": 127611,
-   "assets": 5,
-   "bytes_per_visit": 209482,
-   "usd_per_1000_visits": 0.0178,
-   "usd_per_hour": 0.0178
+   "host": "google.com",
+   "html_bytes": 28878,
+   "assets": 3,
+   "bytes_per_visit": 973912,
+   "usd_per_1000_visits": 0.0828,
+   "usd_per_hour": 0.0828,
+   "js_bytes": 743062,
+   "requests": 37,
+   "basis": "browser"
   },
   {
    "host": "firefox.com",
    "html_bytes": 8934,
    "assets": 21,
-   "bytes_per_visit": 121997,
-   "usd_per_1000_visits": 0.0104,
-   "usd_per_hour": 0.0104
+   "bytes_per_visit": 905901,
+   "usd_per_1000_visits": 0.077,
+   "usd_per_hour": 0.077,
+   "js_bytes": 582707,
+   "requests": 48,
+   "basis": "browser"
   },
   {
-   "host": "claude.com",
-   "html_bytes": 89594,
+   "host": "jjkincreamtaln.noahboah2812.workers.dev",
+   "html_bytes": 18944,
    "assets": 1,
-   "bytes_per_visit": 90792,
-   "usd_per_1000_visits": 0.0077,
-   "usd_per_hour": 0.0077
+   "bytes_per_visit": 605375,
+   "usd_per_1000_visits": 0.0515,
+   "usd_per_hour": 0.0515,
+   "js_bytes": 529387,
+   "requests": 7,
+   "basis": "browser"
   },
   {
-   "host": "sonde.mine.nu",
-   "html_bytes": 1273,
-   "assets": 4,
-   "bytes_per_visit": 83421,
-   "usd_per_1000_visits": 0.0071,
-   "usd_per_hour": 0.0071
+   "host": "shortypower.org",
+   "html_bytes": 4448,
+   "assets": 24,
+   "bytes_per_visit": 404531,
+   "usd_per_1000_visits": 0.0344,
+   "usd_per_hour": 0.0344,
+   "js_bytes": 266797,
+   "requests": 37,
+   "basis": "browser"
+  },
+  {
+   "host": "palera.in",
+   "html_bytes": 5037,
+   "assets": 5,
+   "bytes_per_visit": 356505,
+   "usd_per_1000_visits": 0.0303,
+   "usd_per_hour": 0.0303,
+   "js_bytes": 12616,
+   "requests": 11,
+   "basis": "browser"
+  },
+  {
+   "host": "cpstest.org",
+   "html_bytes": 3149,
+   "bytes_per_visit": 226115,
+   "usd_per_1000_visits": 0.0192,
+   "usd_per_hour": 0.0192,
+   "js_bytes": 127822,
+   "requests": 7,
+   "basis": "browser"
   },
   {
    "host": "grants-governmental-wma-out.trycloudflare.com",
    "html_bytes": 18897,
    "assets": 5,
-   "bytes_per_visit": 73488,
-   "usd_per_1000_visits": 0.0062,
-   "usd_per_hour": 0.0062
+   "bytes_per_visit": 145601,
+   "usd_per_1000_visits": 0.0124,
+   "usd_per_hour": 0.0124,
+   "js_bytes": 46065,
+   "requests": 10,
+   "basis": "browser"
   },
   {
-   "host": "google.com",
-   "html_bytes": 28903,
-   "assets": 3,
-   "bytes_per_visit": 43756,
-   "usd_per_1000_visits": 0.0037,
-   "usd_per_hour": 0.0037
-  },
-  {
-   "host": "codeybox.luishae0701.workers.dev",
-   "html_bytes": 18553,
-   "bytes_per_visit": 18553,
-   "usd_per_1000_visits": 0.0016,
-   "usd_per_hour": 0.0016
-  },
-  {
-   "host": "opencode.ai",
-   "html_bytes": 14610,
-   "bytes_per_visit": 14610,
-   "usd_per_1000_visits": 0.0012,
-   "usd_per_hour": 0.0012
-  },
-  {
-   "host": "luishae07.github.io",
-   "html_bytes": 6615,
-   "bytes_per_visit": 6615,
-   "usd_per_1000_visits": 0.0006,
-   "usd_per_hour": 0.0006
-  },
-  {
-   "host": "cpstest.org",
-   "html_bytes": 3159,
-   "bytes_per_visit": 3159,
-   "usd_per_1000_visits": 0.0003,
-   "usd_per_hour": 0.0003
+   "host": "sonde.mine.nu",
+   "html_bytes": 1273,
+   "assets": 4,
+   "bytes_per_visit": 136239,
+   "usd_per_1000_visits": 0.0116,
+   "usd_per_hour": 0.0116,
+   "js_bytes": 54776,
+   "requests": 8,
+   "basis": "browser"
   },
   {
    "host": "fogcam.org",
    "html_bytes": 2277,
-   "bytes_per_visit": 2277,
-   "usd_per_1000_visits": 0.0002,
-   "usd_per_hour": 0.0002
+   "bytes_per_visit": 129343,
+   "usd_per_1000_visits": 0.011,
+   "usd_per_hour": 0.011,
+   "requests": 4,
+   "basis": "browser"
   },
   {
-   "host": "stackoverflow.com",
-   "html_bytes": 2916,
-   "bytes_per_visit": 2916,
-   "usd_per_1000_visits": 0.0002,
-   "usd_per_hour": 0.0002
+   "host": "codeybox.luishae0701.workers.dev",
+   "html_bytes": 18553,
+   "bytes_per_visit": 20601,
+   "usd_per_1000_visits": 0.0018,
+   "usd_per_hour": 0.0018,
+   "requests": 1,
+   "basis": "browser"
+  },
+  {
+   "host": "luishae07.github.io",
+   "html_bytes": 6615,
+   "bytes_per_visit": 12521,
+   "usd_per_1000_visits": 0.0011,
+   "usd_per_hour": 0.0011,
+   "requests": 2,
+   "basis": "browser"
   },
   {
    "host": "info.cern.ch",
    "html_bytes": 646,
-   "bytes_per_visit": 646,
-   "usd_per_1000_visits": 0.0001,
-   "usd_per_hour": 0.0001
+   "bytes_per_visit": 2532,
+   "usd_per_1000_visits": 0.0002,
+   "usd_per_hour": 0.0002,
+   "requests": 2,
+   "basis": "browser"
   },
   {
    "host": "example.org",
    "html_bytes": 400,
-   "bytes_per_visit": 400
+   "bytes_per_visit": 2173,
+   "usd_per_1000_visits": 0.0002,
+   "usd_per_hour": 0.0002,
+   "js_bytes": 1612,
+   "requests": 2,
+   "basis": "browser"
   }
  ],
  "unreachable": null,

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Is it indexed?</title>
+<style>
+:root{color-scheme:dark;--bg:#0e1628;--card:#17203a;--line:#2a3558;--text:#ecf0ff;--dim:#8c92b0;--accent:#7c8cff;--ok:#34d399;--bad:#f87171}
+*{box-sizing:border-box}body{margin:0;width:340px;background:var(--bg);color:var(--text);font:14px/1.4 system-ui,sans-serif}
+header{padding:14px 16px 4px;font-weight:700}header span{color:var(--accent)}
+#host{padding:0 16px 8px;color:var(--dim);font-size:13px;word-break:break-all}
+.card{margin:8px 16px;padding:14px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+#big{font-size:26px;font-weight:700;line-height:1.1}.ok{color:var(--ok)}.bad{color:var(--bad)}.dim{color:var(--dim)}
+#pages a{display:block;color:var(--text);text-decoration:none;padding:5px 0;border-top:1px solid var(--line);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pages a:hover{color:var(--accent)}
+footer{display:flex;gap:8px;padding:6px 16px 16px;flex-wrap:wrap}footer a{flex:1 1 45%;padding:9px 10px;border-radius:9px;background:var(--accent);color:#0b1020;font-weight:600;text-align:center;text-decoration:none;font-size:13px}
+footer a.alt{background:var(--card);color:var(--text);border:1px solid var(--line)}
+</style></head><body>
+<header>Flowsearch <span>·</span> is it indexed?</header>
+<div id="host"></div>
+<div class="card" id="site"><span class="dim">Asking Flowsearch…</span></div>
+<div class="card" id="page" hidden></div>
+<footer><a id="searchSite" target="_blank" rel="noopener">Search this site</a><a id="add" class="alt" target="_blank" rel="noopener">Add / recrawl</a></footer>
+<script src="lib.js"></script><script src="popup.js"></script>
+</body></html>

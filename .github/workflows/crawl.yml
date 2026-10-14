@@ -8,7 +8,7 @@ jobs:
     timeout-minutes: 350
     strategy:
       matrix:
-        job: [{lang: any, seeds: seeds-tranco.txt}]
+        job: [{lang: de, seeds: seeds-de-big.txt}]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

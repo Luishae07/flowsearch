@@ -8,9 +8,11 @@ jobs:
     timeout-minutes: 350
     strategy:
       matrix:
-        job: [{lang: de, seeds: seeds-de-big.txt}]
+        job: [{lang: de, seeds: seeds-de-cc.txt}]
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
@@ -22,6 +24,7 @@ jobs:
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
+          gunzip -kf seeds-de-cc.txt.gz
           URL=$(cat ../tunnel-url.txt)
           echo "$MYSEARCH_TOKEN" > token.txt
           ./sgcrawl-bin -lang ${{ matrix.job.lang }} -seeds ${{ matrix.job.seeds }} \

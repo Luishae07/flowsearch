@@ -124,8 +124,11 @@ func refreshTunnel() {
 	}
 }
 
-func post(p outPage) error {
-	b, _ := json.Marshal(p)
+func post(p outPage) error { return postAny(p) }
+
+// postAny sends one page (a JSON object) or a batch (a JSON list) in one request.
+func postAny(v interface{}) error {
+	b, _ := json.Marshal(v)
 	req, err := http.NewRequest("POST", ingestURL.Load().(string), bytes.NewReader(b))
 	if err != nil {
 		return err
@@ -172,6 +175,75 @@ func deliver(p outPage) {
 	sentLock.Lock()
 	sentFile.WriteString(p.URL + "\n")
 	sentLock.Unlock()
+}
+
+const (
+	batchPages = 100     // pages per request
+	batchBytes = 2 << 20 // stay far below the server's 4 MB limit
+	batchWait  = 3 * time.Second
+)
+
+// deliverBatch sends many pages in one request; pages that cannot be sent go to the spool.
+func deliverBatch(ps []outPage) {
+	if len(ps) == 0 {
+		return
+	}
+	ok := false
+	for attempt := 0; attempt < 3 && !ok; attempt++ {
+		if err := postAny(ps); err != nil {
+			refreshTunnel()
+			time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
+			continue
+		}
+		ok = true
+	}
+	if ok {
+		stats.sent.Add(int64(len(ps)))
+	} else {
+		stats.failed.Add(int64(len(ps)))
+		spoolLock.Lock()
+		if f, err := os.OpenFile("spool.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644); err == nil {
+			for _, p := range ps {
+				b, _ := json.Marshal(p)
+				f.Write(append(b, '\n'))
+			}
+			f.Close()
+		}
+		spoolLock.Unlock()
+	}
+	sentLock.Lock()
+	for _, p := range ps {
+		sentFile.WriteString(p.URL + "\n")
+	}
+	sentLock.Unlock()
+}
+
+// batcher collects pages from pageCh and sends them 100 at a time (or after a few seconds).
+func batcher() {
+	var batch []outPage
+	size := 0
+	flush := func() {
+		deliverBatch(batch)
+		batch, size = nil, 0
+	}
+	t := time.NewTicker(batchWait)
+	defer t.Stop()
+	for {
+		select {
+		case p, open := <-pageCh:
+			if !open {
+				flush()
+				return
+			}
+			batch = append(batch, p)
+			size += len(p.Text) + len(p.Title) + len(p.Description) + len(p.URL) + 100
+			if len(batch) >= batchPages || size >= batchBytes {
+				flush()
+			}
+		case <-t.C:
+			flush()
+		}
+	}
 }
 
 // replaySpool sends pages that could not be sent earlier.
@@ -380,13 +452,11 @@ func main() {
 	}()
 
 	var senders sync.WaitGroup
-	for i := 0; i < 64; i++ {
+	for i := 0; i < 4; i++ { // a few senders, each sends batches of 100 pages
 		senders.Add(1)
 		go func() {
 			defer senders.Done()
-			for p := range pageCh {
-				deliver(p)
-			}
+			batcher()
 		}()
 	}
 	go replaySpool()

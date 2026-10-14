@@ -142,6 +142,10 @@ func postAny(v interface{}) error {
 	}
 	io.Copy(io.Discard, resp.Body)
 	resp.Body.Close()
+	if resp.StatusCode == 429 {
+		log.Printf("the server's daily data limit is reached - stopping the crawl until tomorrow")
+		os.Exit(0)
+	}
 	if resp.StatusCode >= 300 {
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
 	}

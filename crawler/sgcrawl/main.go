@@ -319,7 +319,6 @@ func main() {
 	tokenFile := flag.String("token-file", "", "file with the ingest token (default ~/.mysearch_token)")
 	seedsFile := flag.String("seeds", "", "crawl only the sites in this file (one per line), not the built-in lists")
 	watch := flag.Bool("watch", false, "with -seeds: keep running and crawl new sites as they are added to the file")
-	sitesPerSec := flag.Int("sites-per-sec", 0, "start at most this many new sites per second (0 = no limit)")
 	flag.IntVar(&maxPages, "maxpages", 0, "stop after this many pages from one site (0 = no limit)")
 	lang := flag.String("lang", "en", "keep pages in this language: en, de, or any (no language filter - webmaster-submitted sites)")
 	flag.Parse()
@@ -504,19 +503,7 @@ func main() {
 				}
 			}()
 		}
-		var startTick <-chan time.Time
-		if *sitesPerSec > 0 {
-			t := time.NewTicker(time.Second / time.Duration(*sitesPerSec))
-			defer t.Stop()
-			startTick = t.C
-		}
 		for _, s := range list {
-			if startTick != nil {
-				select {
-				case <-startTick:
-				case <-ctx.Done():
-				}
-			}
 			select {
 			case jobs <- s:
 			case <-ctx.Done():

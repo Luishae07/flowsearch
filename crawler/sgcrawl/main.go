@@ -11,6 +11,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"flag"
@@ -129,11 +130,16 @@ func post(p outPage) error { return postAny(p) }
 // postAny sends one page (a JSON object) or a batch (a JSON list) in one request.
 func postAny(v interface{}) error {
 	b, _ := json.Marshal(v)
-	req, err := http.NewRequest("POST", ingestURL.Load().(string), bytes.NewReader(b))
+	var zb bytes.Buffer
+	zw := gzip.NewWriter(&zb)
+	zw.Write(b)
+	zw.Close()
+	req, err := http.NewRequest("POST", ingestURL.Load().(string), bytes.NewReader(zb.Bytes()))
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Encoding", "gzip")
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("User-Agent", ua)
 	resp, err := ingestHTTP.Do(req)

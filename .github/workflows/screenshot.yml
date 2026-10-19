@@ -21,12 +21,15 @@ jobs:
         run: |
           npm init -y >/dev/null
           npm install playwright >/dev/null
+      - name: playwright version
+        id: pwv
+        run: echo "v=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: cache playwright browsers
         id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-firefox-${{ runner.os }}
+          key: playwright-firefox-${{ runner.os }}-${{ steps.pwv.outputs.v }}
       - name: cache apt packages
         uses: actions/cache@v4
         with:

@@ -23,4 +23,4 @@ jobs:
           echo "$MYSEARCH_TOKEN" > token.txt
           ./sgcrawl-bin -lang any -seeds sites/shortypower.org.txt \
             -ingest "$URL/api/ingest" -token-file token.txt \
-            -workers 100 -hours 1 -maxpages 5000
+            -workers 500 -hours 1 -maxpages 5000

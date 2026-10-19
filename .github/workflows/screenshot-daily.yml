@@ -43,23 +43,16 @@ jobs:
         run: |
           npm init -y >/dev/null
           npm install playwright >/dev/null
+      - name: playwright version
+        id: pwv
+        run: echo "v=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: cache playwright browsers
-        id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-firefox-${{ runner.os }}
-      - name: cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: apt-firefox-deps-${{ runner.os }}
-      - name: install firefox browser (only on cache miss)
-        if: steps.pw-cache.outputs.cache-hit != 'true'
+          key: playwright-firefox-${{ runner.os }}-${{ steps.pwv.outputs.v }}
+      - name: install firefox (downloads only what the cache does not have)
         run: npx playwright install --with-deps firefox
-      - name: install firefox OS deps (always needed, cache only covers the browser binary)
-        if: steps.pw-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps firefox
       - name: screenshot
         run: |
           mkdir -p screenshots

@@ -23,4 +23,4 @@ jobs:
           echo "$MYSEARCH_TOKEN" > token.txt
           ./sgcrawl-bin -lang any -seeds sites/luishae07.github.io.txt \
             -ingest "$URL/api/ingest" -token-file token.txt \
-            -workers 20 -hours 1 -maxpages 5000
+            -workers 100 -hours 1 -maxpages 5000

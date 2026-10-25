@@ -1,0 +1,30 @@
+name: Sitemap scan
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: Site (hostname only)
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: sitemap-scan-${{ inputs.site }}
+  cancel-in-progress: true
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: scan
+        env:
+          SITE: ${{ inputs.site }}
+        run: python3 crawler/sitemap_scan.py
+      - name: save
+        run: |
+          git config user.name "flowsearch-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add sitemap-scans
+          git commit -m "Sitemap scan" || exit 0
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 3; done
+          exit 1

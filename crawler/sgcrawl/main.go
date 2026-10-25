@@ -321,6 +321,7 @@ func main() {
 	watch := flag.Bool("watch", false, "with -seeds: keep running and crawl new sites as they are added to the file")
 	flag.IntVar(&maxPages, "maxpages", 0, "stop after this many pages from one site (0 = no limit)")
 	lang := flag.String("lang", "en", "keep pages in this language: en, de, or any (no language filter - webmaster-submitted sites)")
+	oneURL := flag.String("url", "", "fetch just this one page, send it and exit (a webmaster's recrawl request)")
 	flag.Parse()
 	if *lang == "de-site" { // a site its owner says is German: judge by the text, not the address
 		langOK = sgpack.IsGermanText
@@ -366,6 +367,10 @@ func main() {
 		ingestURL.Store(*ingestFlag)
 	} else {
 		refreshTunnel()
+	}
+
+	if *oneURL != "" {
+		os.Exit(crawlOne(*oneURL))
 	}
 
 	// what was already sent

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"log"
 	"mysearch/sgpack"
 	"net"
 	"net/http"
@@ -158,7 +159,9 @@ func crawlSite(ctx context.Context, site, extra string) bool {
 	host := su.Host
 	base := strings.TrimPrefix(host, "www.")
 	// the site, www, and any subdomain of it (ed2k.example.org belongs to example.org)
-	same := func(h string) bool { return h == host || h == "www."+host || "www."+h == host || h == base || strings.HasSuffix(h, "."+base) }
+	same := func(h string) bool {
+		return h == host || h == "www."+host || "www."+h == host || h == base || strings.HasSuffix(h, "."+base)
+	}
 	if _, err := fetch(ctx, site+"/", 20000, true, 10*time.Second); err != nil {
 		stats.skipped.Add(1)
 		return ctx.Err() == nil // a site that does not answer is skipped for a week
@@ -460,3 +463,43 @@ func sleepCtx(ctx context.Context, d time.Duration) {
 }
 
 var _ = fmt.Sprint
+
+// crawlOne fetches one page, sends it and returns the exit code. The page is stored again even if it is
+// already known (the ingest keeps a new version when a submitted site's page changed).
+func crawlOne(raw string) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	u, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		log.Printf("not a web address: %s", raw)
+		return 1
+	}
+	if r, err := fetch(ctx, u.Scheme+"://"+u.Host+"/robots.txt", 500_000, true, 10*time.Second); err == nil && len(r.body) > 0 {
+		if rb := parseRobots(string(r.body), ua); !rb.allowed(u.RequestURI()) {
+			log.Printf("robots.txt does not allow %s", raw)
+			return 1
+		}
+	}
+	r, err := fetch(ctx, u.String(), 1_500_000, true, 20*time.Second)
+	if err != nil || len(r.body) == 0 {
+		log.Printf("could not fetch %s: %v", raw, err)
+		return 1
+	}
+	var pg outPage
+	if ct := strings.ToLower(r.ctype); strings.Contains(ct, "html") || ct == "" {
+		p := parse(r.body, false, 8000)
+		pg = outPage{URL: r.url, Title: p.title, Description: p.desc, Text: p.text, Source: "html"}
+	} else {
+		pg = outPage{URL: r.url, Title: clip(strings.TrimSpace(string(r.body[:min(len(r.body), 200)])), 200), Text: clip(collapse(string(r.body[:min(len(r.body), 12000)])), 2000), Source: "html"}
+	}
+	for attempt := 0; attempt < 3; attempt++ {
+		if err := post(pg); err == nil {
+			log.Printf("sent %s", pg.URL)
+			return 0
+		}
+		refreshTunnel()
+		time.Sleep(time.Duration(attempt+1) * 2 * time.Second)
+	}
+	log.Printf("could not send %s", pg.URL)
+	return 1
+}

@@ -7,12 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"mysearch/sgpack"
 	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -103,7 +105,7 @@ func discover(ctx context.Context, site string, rb *robots, extra string) (metho
 	if extra == "" { // a sitemap the owner sent in goes first and replaces the llms.txt step
 		if r, err := fetch(ctx, site+"/llms.txt", 3_000_000, true, 15*time.Second); err == nil && len(r.body) > 0 && !bytes.HasPrefix(bytes.TrimSpace(r.body), []byte("<")) {
 			for _, m := range llmsRe.FindAllSubmatch(r.body, -1) {
-				urls = append(urls, string(m[1]))
+				urls = append(urls, html.UnescapeString(string(m[1])))
 			}
 			if len(urls) > 0 {
 				return "llms.txt", urls, nil
@@ -132,7 +134,7 @@ func discover(ctx context.Context, site string, rb *robots, extra string) (metho
 		index := bytes.Contains(r.body, []byte("<sitemapindex"))
 		for _, m := range locs {
 			if index {
-				todo = append(todo, string(m[1]))
+				todo = append(todo, html.UnescapeString(string(m[1])))
 			} else {
 				urls = append(urls, string(m[1]))
 			}
@@ -192,6 +194,7 @@ func crawlSite(ctx context.Context, site, extra string) bool {
 	stats.sitesStarted.Add(1)
 	taken := 0
 	seen := make(map[string]struct{}, len(queue))
+	variants := map[string]int{}
 	for _, u := range queue {
 		seen[u] = struct{}{}
 	}
@@ -210,6 +213,17 @@ func crawlSite(ctx context.Context, site, extra string) bool {
 		pu, err := url.Parse(u)
 		if err != nil || !same(pu.Host) || !rb.allowed(pu.RequestURI()) {
 			continue
+		}
+		dup := false
+		if pu.RawQuery != "" { // the same page with other sorting or filter values: fetched for its links, but not stored again
+			names := make([]string, 0, 4)
+			for k := range pu.Query() {
+				names = append(names, k)
+			}
+			sort.Strings(names)
+			shape := pu.Host + pu.Path + "?" + strings.Join(names, "&")
+			dup = variants[shape] >= 1
+			variants[shape]++
 		}
 		r, err := fetch(ctx, u, 1_500_000, true, 20*time.Second)
 		if err != nil {
@@ -255,7 +269,7 @@ func crawlSite(ctx context.Context, site, extra string) bool {
 		default:
 			continue
 		}
-		if skip {
+		if skip || dup {
 			pause(ctx)
 			continue
 		}

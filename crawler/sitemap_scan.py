@@ -39,11 +39,14 @@ def read_sitemap(addr, keep):
     return out
 
 
-robots, robots_status = "", "not found"
+robots, robots_status, robots_code = "", "not found", 0
 for scheme in ("https://", "http://"):
     try:
         robots = get(scheme + site + "/robots.txt", 512 << 10).decode("utf-8", "replace")
-        robots_status = "found"
+        robots_status, robots_code = "found", 200
+        break
+    except urllib.error.HTTPError as e:
+        robots_code = e.code
         break
     except Exception:
         continue
@@ -79,6 +82,6 @@ for addr in listed[:10]:
 
 os.makedirs("sitemap-scans", exist_ok=True)
 with open("sitemap-scans/%s.json" % site, "w") as f:
-    json.dump({"site": site, "scanned": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "robots": robots_status,
+    json.dump({"site": site, "scanned": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "robots": robots_status, "robots_code": robots_code, "robots_body": robots[:400000],
                "found_by": how, "listed": len(listed), "sitemaps": sitemaps}, f)
 print("scanned", site, len(sitemaps), "sitemaps")

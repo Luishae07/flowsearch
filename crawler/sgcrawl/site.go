@@ -156,7 +156,9 @@ func crawlSite(ctx context.Context, site, extra string) bool {
 		return true
 	}
 	host := su.Host
-	same := func(h string) bool { return h == host || h == "www."+host || "www."+h == host }
+	base := strings.TrimPrefix(host, "www.")
+	// the site, www, and any subdomain of it (ed2k.example.org belongs to example.org)
+	same := func(h string) bool { return h == host || h == "www."+host || "www."+h == host || h == base || strings.HasSuffix(h, "."+base) }
 	if _, err := fetch(ctx, site+"/", 20000, true, 10*time.Second); err != nil {
 		stats.skipped.Add(1)
 		return ctx.Err() == nil // a site that does not answer is skipped for a week

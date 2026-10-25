@@ -1,1 +1,1 @@
-huggingface.co
+huggingface.co	https://huggingface.co/sitemap-papers.xml

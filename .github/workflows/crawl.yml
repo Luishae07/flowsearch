@@ -1,33 +1,59 @@
-name: SG225 crawl
+name: crawl
+
+# The Flowsearch crawl in batches of 500 sites. One job = one batch = a slice of crawler/seeds-tranco.txt.
+# Each job reads its 500 sites all at the same time (plain requests, real Firefox for pages that need JavaScript)
+# and sends everything it found to the Flowsearch ingest in ONE request.
+# Start it by hand (Actions > crawl > Run workflow) or let the box on the server do it (it runs `gh workflow run crawl`).
 on:
   workflow_dispatch:
+    inputs:
+      ingest_url:
+        description: "address of the Flowsearch ingest (the cloudflared tunnel to port 8811), without /api/ingest"
+        required: true
+      first_batch:
+        description: "number of the first batch (batch N reads sites N*500 ...)"
+        default: "0"
+      batches:
+        description: "how many batches to run (one job each, up to 20 at the same time)"
+        default: "20"
+      pages_per_site:
+        description: "pages read from each site"
+        default: "10"
 
 jobs:
-  crawl:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        run: |
+          python3 -c "import json,sys; a=int(sys.argv[1]); n=int(sys.argv[2]); print('matrix=' + json.dumps(list(range(a, a+n))))" "${{ inputs.first_batch }}" "${{ inputs.batches }}" >> "$GITHUB_OUTPUT"
+
+  crawl:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
     strategy:
+      fail-fast: false
+      max-parallel: 20
       matrix:
-        job: [{lang: de, seeds: seeds-de-cc.txt}]
+        batch: ${{ fromJson(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
         with:
-          lfs: true
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
+          workspaces: flowcrawl
       - name: build
-        working-directory: crawler
-        run: CGO_ENABLED=0 go build -trimpath -ldflags "-s -w" -o sgcrawl-bin ./sgcrawl
-      - name: crawl
-        working-directory: crawler
+        run: cargo build --release --manifest-path flowcrawl/Cargo.toml
+      - name: crawl batch ${{ matrix.batch }}
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
-          ulimit -n 60000 || true
-          gunzip -kf seeds-de-cc.txt.gz
-          URL=$(cat ../tunnel-url.txt)
-          echo "$MYSEARCH_TOKEN" > token.txt
-          ./sgcrawl-bin -lang ${{ matrix.job.lang }} -seeds ${{ matrix.job.seeds }} \
-            -ingest "$URL/api/ingest" -token-file token.txt \
-            -workers 1500 -delay 20ms -hours 5.5
+          ulimit -n 65000 || true
+          START=$(( ${{ matrix.batch }} * 500 ))
+          ./flowcrawl/target/release/flowcrawl \
+            --seeds crawler/seeds-tranco.txt \
+            --start "$START" --count 500 \
+            --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
+            --ingest "${{ inputs.ingest_url }}"

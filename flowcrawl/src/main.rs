@@ -208,7 +208,13 @@ async fn render(ff: &Option<mpsc::Sender<Job>>, url: &str) -> Option<Seen> {
     r.await.ok().flatten()
 }
 
-async fn crawl_site(client: reqwest::Client, ff: Option<mpsc::Sender<Job>>, seed: String, pages: usize, out: Arc<Mutex<Vec<Page>>>) -> usize {
+/// a site name worth keeping as a new seed: a real domain name (no address, no odd characters)
+fn good_host(h: &str) -> bool {
+    h.len() >= 4 && h.len() <= 80 && h.contains('.') && !h.starts_with('.') && !h.ends_with('.') && h.parse::<std::net::IpAddr>().is_err()
+        && h.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.')
+}
+
+async fn crawl_site(client: reqwest::Client, ff: Option<mpsc::Sender<Job>>, seed: String, pages: usize, out: Arc<Mutex<Vec<Page>>>, ext: Arc<Mutex<HashSet<String>>>) -> usize {
     let seed = if seed.starts_with("http://") || seed.starts_with("https://") { seed } else { format!("https://{}", seed) };
     let Ok(start) = Url::parse(&seed) else { return 0 };
     let host = bare_host(&start);
@@ -293,7 +299,19 @@ async fn crawl_site(client: reqwest::Client, ff: Option<mpsc::Sender<Job>>, seed
                 }
                 let Ok(mut l) = cur.join(href) else { continue };
                 l.set_fragment(None);
-                if !(l.scheme() == "http" || l.scheme() == "https") || bare_host(&l) != host {
+                if !(l.scheme() == "http" || l.scheme() == "https") {
+                    continue;
+                }
+                let lh = bare_host(&l);
+                if lh != host {
+                    // a link to another site: it is not read now, but its name is kept as a new seed for later
+                    if good_host(&lh) {
+                        if let Ok(mut e) = ext.lock() {
+                            if e.len() < 150_000 {
+                                e.insert(lh);
+                            }
+                        }
+                    }
                     continue;
                 }
                 let ls = l.to_string();
@@ -335,19 +353,27 @@ async fn main() {
         .expect("http client");
     let ff = start_firefox(a.render).await;
     let out: Arc<Mutex<Vec<Page>>> = Arc::new(Mutex::new(Vec::new()));
+    let ext: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
 
     let pages = a.pages;
     let t0 = std::time::Instant::now();
+    let ext2 = ext.clone();
     let total: usize = stream::iter(sites)
         .map(|s| {
-            let (c, o, f) = (client.clone(), out.clone(), ff.clone());
-            async move { tokio::time::timeout(Duration::from_secs(300), crawl_site(c, f, s, pages, o)).await.unwrap_or(0) }
+            let (c, o, f, e) = (client.clone(), out.clone(), ff.clone(), ext2.clone());
+            async move { tokio::time::timeout(Duration::from_secs(300), crawl_site(c, f, s, pages, o, e)).await.unwrap_or(0) }
         })
         .buffer_unordered(a.conc)
         .fold(0usize, |acc, n| async move { acc + n })
         .await;
     println!("crawled: {} pages in {} s", total, t0.elapsed().as_secs());
 
+    {   // the new site names found in links, one per line (the seed-list bot on the server picks the file up)
+        let mut hs: Vec<String> = ext.lock().map(|g| g.iter().cloned().collect()).unwrap_or_default();
+        hs.sort();
+        println!("{} new site names found in links", hs.len());
+        std::fs::write("discovered.txt", hs.join("\n")).ok();
+    }
     let all: Vec<Page> = out.lock().map(|g| g.clone()).unwrap_or_default();
     std::fs::write("pages.json", serde_json::to_vec(&all).unwrap_or_default()).ok();
     if a.ingest.is_empty() {

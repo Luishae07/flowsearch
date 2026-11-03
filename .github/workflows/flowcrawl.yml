@@ -1,9 +1,10 @@
 name: flowcrawl
 
-# The Flowsearch crawl in batches of 500 sites. One job = one batch = a slice of crawler/seeds-tranco.txt.
+# The Flowsearch crawl in batches of 500 sites. One job = one batch = a slice of crawler/seeds-tranco.txt followed by crawler/seeds-discovered.txt
+# (the sites the crawl itself found in links; a bot on the server keeps that file growing).
 # Each job reads its 500 sites all at the same time (plain requests, real Firefox for pages that need JavaScript)
-# and sends everything it found to the Flowsearch ingest in ONE request.
-# Start it by hand (Actions > crawl > Run workflow) or let the box on the server do it (it runs `gh workflow run crawl`).
+# and sends everything it found to the Flowsearch ingest in ONE request. The new site names it saw in links are kept as an artifact.
+# Start it by hand (Actions > flowcrawl > Run workflow) or let the box on the server do it (it runs `gh workflow run flowcrawl.yml`).
 on:
   workflow_dispatch:
     inputs:
@@ -51,9 +52,17 @@ jobs:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           ulimit -n 65000 || true
+          { cat crawler/seeds-tranco.txt; echo; cat crawler/seeds-discovered.txt 2>/dev/null; } > all-seeds.txt
           START=$(( ${{ matrix.batch }} * 500 ))
           ./flowcrawl/target/release/flowcrawl \
-            --seeds crawler/seeds-tranco.txt \
+            --seeds all-seeds.txt \
             --start "$START" --count 500 \
             --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
             --ingest "${{ inputs.ingest_url }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: discovered-${{ matrix.batch }}
+          path: discovered.txt
+          retention-days: 2
+          if-no-files-found: ignore

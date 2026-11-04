@@ -7,7 +7,7 @@ description = "Flowsearch crawler: reads a batch of sites in parallel (plain req
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "process"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip", "brotli", "deflate"] }
-fantoccini = "0.21"
+flate2 = "1"
 futures = "0.3"
 scraper = "0.20"
 url = "2"

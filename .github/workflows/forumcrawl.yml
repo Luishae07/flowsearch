@@ -23,14 +23,14 @@ on:
         description: "products to save from each Amazon site"
         default: "300"
       new_lemmy:
-        description: "new Lemmy posts to read"
-        default: "3000"
+        description: "new Lemmy posts to read in all (0: no limit, until the time is up)"
+        default: "0"
       per_discourse:
-        description: "topics read from each Discourse forum"
-        default: "60"
+        description: "topics read from each Discourse forum (0: no limit, the forum is read until its topics run out)"
+        default: "0"
       per_languages:
-        description: "topics read from each Python / programming language forum"
-        default: "100"
+        description: "topics read from each Python / programming language forum (0: no limit)"
+        default: "0"
 
 permissions:
   contents: read
@@ -56,7 +56,7 @@ jobs:
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
           ./bin/lemmycrawl -plain -firefox -remote "$URL" -new \
-            -n "${{ inputs.new_lemmy || '3000' }}" -per 40 -browsers 12 -servers crawler/forums-lemmy.txt
+            -n "${{ inputs.new_lemmy || '0' }}" -per 0 -minutes 330 -hostminutes 25 -browsers 12 -servers crawler/forums-lemmy.txt
 
   discourse:
     if: ${{ inputs.only == '' || inputs.only == 'discourse' }}
@@ -78,7 +78,7 @@ jobs:
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
           ./bin/lemmycrawl -plain -firefox -remote "$URL" \
-            -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '60' }}" -browsers 12
+            -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '0' }}" -minutes 330 -hostminutes 20 -browsers 12
 
   languages:
     if: ${{ inputs.only == '' || inputs.only == 'languages' }}
@@ -100,7 +100,7 @@ jobs:
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
           ./bin/lemmycrawl -plain -firefox -remote "$URL" \
-            -discourse crawler/forums-languages.txt -per "${{ inputs.per_languages || '100' }}" -browsers 12
+            -discourse crawler/forums-languages.txt -per "${{ inputs.per_languages || '0' }}" -minutes 330 -hostminutes 25 -browsers 12
 
   amazon:
     if: ${{ inputs.only == '' || inputs.only == 'amazon' }}

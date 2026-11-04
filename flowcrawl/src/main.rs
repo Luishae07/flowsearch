@@ -10,7 +10,8 @@
 //      it is opened in a real headless Firefox instead (--render Firefox windows, started through geckodriver).
 // At the end ALL the pages of the batch go to the Flowsearch ingest in ONE request: POST URL/api/ingest, Bearer token from $MYSEARCH_TOKEN.
 
-use fantoccini::{ClientBuilder, Locator};
+use flate2::{write::GzEncoder, Compression};
+use std::io::Write;
 use futures::stream::{self, StreamExt};
 use scraper::{node::Node, Html, Selector};
 use serde::{Deserialize, Serialize};
@@ -145,6 +146,29 @@ async fn fetch_html(client: &reqwest::Client, url: &str) -> Option<String> {
 
 type Job = (String, oneshot::Sender<Option<Seen>>);
 
+/// one WebDriver call (plain JSON over HTTP); the answer, or None if it failed
+async fn wd(client: &reqwest::Client, method: &str, url: String, body: Option<serde_json::Value>) -> Option<serde_json::Value> {
+    let rb = match method {
+        "POST" => client.post(&url),
+        "DELETE" => client.delete(&url),
+        _ => client.get(&url),
+    }
+    .timeout(Duration::from_secs(60));
+    let rb = match body {
+        Some(b) => rb.header("Content-Type", "application/json").body(b.to_string()),
+        None => rb,
+    };
+    let r = rb.send().await.ok()?;
+    let ok = r.status().is_success();
+    let t = r.text().await.ok()?;
+    let v: serde_json::Value = serde_json::from_str(&t).ok()?;
+    if !ok {
+        eprintln!("webdriver {} {} -> {}", method, url, trunc(&t, 300));
+        return None;
+    }
+    Some(v)
+}
+
 /// the Firefox windows: each one is a geckodriver + a headless Firefox, taking page addresses from one shared queue
 async fn start_firefox(n: usize) -> Option<mpsc::Sender<Job>> {
     if n == 0 {
@@ -163,36 +187,52 @@ async fn start_firefox(n: usize) -> Option<mpsc::Sender<Job>> {
         };
         std::mem::forget(child);
         tokio::time::sleep(Duration::from_millis(800)).await;
-        let mut caps = serde_json::Map::new();
-        caps.insert("moz:firefoxOptions".to_string(), serde_json::json!({"args": ["-headless"], "prefs": {"permissions.default.image": 2}}));
-        let client = match ClientBuilder::native().capabilities(caps).connect(&format!("http://localhost:{}", port)).await {
-            Ok(c) => c,
-            Err(e) => {
-                eprintln!("Firefox window {} did not open: {}", i, e);
-                continue;
+        // talk to geckodriver directly (the WebDriver protocol is a few plain HTTP requests): wait until it answers, then open ONE session
+        let http = reqwest::Client::builder().no_proxy().build().expect("webdriver client");
+        let base = format!("http://127.0.0.1:{}", port);
+        let mut ready = false;
+        for _ in 0..30 {
+            if http.get(format!("{}/status", base)).timeout(Duration::from_secs(2)).send().await.map(|r| r.status().is_success()).unwrap_or(false) {
+                ready = true;
+                break;
             }
+            tokio::time::sleep(Duration::from_millis(500)).await;
+        }
+        if !ready {
+            eprintln!("geckodriver {} did not answer", i);
+            continue;
+        }
+        let caps = serde_json::json!({"capabilities": {"alwaysMatch": {"browserName": "firefox", "moz:firefoxOptions": {"args": ["-headless"], "prefs": {"permissions.default.image": 2}}}}});
+        let Some(v) = wd(&http, "POST", format!("{}/session", base), Some(caps)).await else {
+            eprintln!("Firefox window {} did not open", i);
+            continue;
         };
+        let Some(sid) = v["value"]["sessionId"].as_str().map(|s| s.to_string()) else {
+            eprintln!("Firefox window {}: no session id in the answer", i);
+            continue;
+        };
+        let _ = wd(&http, "POST", format!("{}/session/{}/timeouts", base, sid), Some(serde_json::json!({"pageLoad": 20000, "script": 15000, "implicit": 0}))).await;
         up += 1;
         let rx = rx.clone();
         tokio::spawn(async move {
             loop {
                 let job = { rx.lock().await.recv().await };
                 let Some((url, back)) = job else { break };
-                let r = tokio::time::timeout(Duration::from_secs(40), async {
-                    client.goto(&url).await.ok()?;
+                let (http, base, sid) = (&http, &base, &sid);
+                let r = tokio::time::timeout(Duration::from_secs(40), async move {
+                    wd(http, "POST", format!("{}/session/{}/url", base, sid), Some(serde_json::json!({"url": url}))).await?;
                     tokio::time::sleep(Duration::from_millis(1800)).await;
-                    let v = client.execute(JS, vec![]).await.ok()?;
-                    serde_json::from_str::<Seen>(v.as_str()?).ok()
+                    let v = wd(http, "POST", format!("{}/session/{}/execute/sync", base, sid), Some(serde_json::json!({"script": JS, "args": []}))).await?;
+                    serde_json::from_str::<Seen>(v["value"].as_str()?).ok()
                 })
                 .await
                 .ok()
                 .flatten();
                 let _ = back.send(r);
             }
-            let _ = client.close().await;
+            let _ = wd(&http, "DELETE", format!("{}/session/{}", base, sid), None).await;
         });
     }
-    let _ = Locator::Css("body"); // keeps the import used on every fantoccini version
     println!("{} Firefox windows are open", up);
     if up == 0 {
         None
@@ -384,25 +424,56 @@ async fn main() {
         println!("nothing to send");
         return;
     }
-    // ONE request with every page of the batch
+    // the whole batch in ONE request (gzip-packed). The ingest accepts at most 4 MB on the wire, so a batch that packs to more
+    // than that is cut in halves, again and again, until every piece fits: still as few requests as possible.
     let token = std::env::var("MYSEARCH_TOKEN").unwrap_or_default();
     let url = format!("{}/api/ingest", a.ingest.trim_end_matches('/'));
-    let body = serde_json::to_vec(&all).unwrap_or_default();
-    println!("sending {} pages ({} KB) in one request to {}", all.len(), body.len() / 1024, url);
-    let mut ok = false;
-    for attempt in 1..=3 {
-        match client.post(&url).bearer_auth(&token).header("Content-Type", "application/json").body(body.clone()).timeout(Duration::from_secs(300)).send().await {
-            Ok(r) if r.status().is_success() => {
-                println!("ingest accepted the batch (HTTP {})", r.status());
-                ok = true;
-                break;
-            }
-            Ok(r) => eprintln!("attempt {}: the ingest answered HTTP {}", attempt, r.status()),
-            Err(e) => eprintln!("attempt {}: the ingest could not be reached: {}", attempt, e),
-        }
-        tokio::time::sleep(Duration::from_secs(5 * attempt)).await;
-    }
+    let mut requests = 0usize;
+    let ok = post_pages(&client, &url, &token, &all, &mut requests).await;
+    println!("{} pages sent in {} request(s)", all.len(), requests);
     if !ok {
         std::process::exit(1);
     }
+}
+
+const WIRE_MAX: usize = 3_700_000; // the ingest reads 4 MB at most
+
+fn gzip_pages(pages: &[Page]) -> Vec<u8> {
+    let json = serde_json::to_vec(pages).unwrap_or_default();
+    let mut z = GzEncoder::new(Vec::new(), Compression::fast());
+    let _ = z.write_all(&json);
+    z.finish().unwrap_or_default()
+}
+
+fn post_pages<'a>(client: &'a reqwest::Client, url: &'a str, token: &'a str, pages: &'a [Page], requests: &'a mut usize) -> std::pin::Pin<Box<dyn std::future::Future<Output = bool> + 'a>> {
+    Box::pin(async move {
+        if pages.is_empty() {
+            return true;
+        }
+        let body = gzip_pages(pages);
+        if body.len() > WIRE_MAX && pages.len() > 1 {
+            let mid = pages.len() / 2;
+            let a = post_pages(client, url, token, &pages[..mid], requests).await;
+            let b = post_pages(client, url, token, &pages[mid..], requests).await;
+            return a && b;
+        }
+        for attempt in 1..=3u64 {
+            *requests += 1;
+            println!("sending {} pages ({} KB packed)", pages.len(), body.len() / 1024);
+            match client.post(url).bearer_auth(token).header("Content-Type", "application/json").header("Content-Encoding", "gzip").body(body.clone()).timeout(Duration::from_secs(600)).send().await {
+                Ok(r) if r.status().is_success() => return true,
+                Ok(r) => {
+                    let st = r.status();
+                    let t = r.text().await.unwrap_or_default();
+                    eprintln!("attempt {}: the ingest answered HTTP {} {}", attempt, st, trunc(&t, 200));
+                    if st.as_u16() == 400 || st.as_u16() == 401 {
+                        return false; // a retry cannot fix these
+                    }
+                }
+                Err(e) => eprintln!("attempt {}: the ingest could not be reached: {}", attempt, e),
+            }
+            tokio::time::sleep(Duration::from_secs(5 * attempt)).await;
+        }
+        false
+    })
 }

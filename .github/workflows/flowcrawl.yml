@@ -27,11 +27,13 @@ jobs:
     timeout-minutes: 340
     steps:
       - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: flowcrawl
-      - name: build
-        run: cargo build --release --manifest-path flowcrawl/Cargo.toml
+      - name: get the prebuilt crawler (no build)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p flowcrawl/target/release
+          gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern flowcrawl --dir flowcrawl/target/release --clobber
+          chmod +x flowcrawl/target/release/flowcrawl
       - name: crawl
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}

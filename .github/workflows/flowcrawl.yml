@@ -37,7 +37,7 @@ jobs:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           ulimit -n 65000 || true
-          { cat crawler/seeds-tranco.txt; echo; cat crawler/seeds-discovered.txt 2>/dev/null; } > all-seeds.txt
+          { cat crawler/seeds-tranco.txt; echo; cat crawler/seeds-discovered.txt 2>/dev/null || true; } > all-seeds.txt
           FAIL=0
           : > all-discovered.txt
           for B in $(seq ${{ inputs.first_batch }} $(( ${{ inputs.first_batch }} + ${{ inputs.batches }} - 1 ))); do
@@ -47,7 +47,7 @@ jobs:
               --start $(( B * 500 )) --count 500 \
               --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
               --ingest "${{ inputs.ingest_url }}" || FAIL=1
-            cat discovered.txt >> all-discovered.txt 2>/dev/null; echo >> all-discovered.txt
+            { cat discovered.txt >> all-discovered.txt; } 2>/dev/null || true; echo >> all-discovered.txt
             echo "::endgroup::"
           done
           sort -u all-discovered.txt > discovered.txt

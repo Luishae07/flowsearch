@@ -16,6 +16,9 @@ on:
       ingest_url:
         description: "address of the ingest tunnel (empty: the one in tunnel-url.txt)"
         default: ""
+      only:
+        description: "run only one job: lemmy, discourse or languages (empty: all three)"
+        default: ""
       new_lemmy:
         description: "new Lemmy posts to read"
         default: "3000"
@@ -31,6 +34,7 @@ permissions:
 
 jobs:
   lemmy:
+    if: ${{ inputs.only == '' || inputs.only == 'lemmy' }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
@@ -52,6 +56,7 @@ jobs:
             -n "${{ inputs.new_lemmy || '3000' }}" -per 40 -browsers 12 -servers crawler/forums-lemmy.txt
 
   discourse:
+    if: ${{ inputs.only == '' || inputs.only == 'discourse' }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
@@ -73,6 +78,7 @@ jobs:
             -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '60' }}" -browsers 12
 
   languages:
+    if: ${{ inputs.only == '' || inputs.only == 'languages' }}
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:

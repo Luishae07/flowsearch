@@ -1,6 +1,7 @@
 name: forumcrawl
 
-# The forum crawl. The crawler fetches the public JSON of Lemmy servers and Discourse forums with normal HTTP requests (no browser, no Browser Use),
+# The forum crawl. The crawler fetches the public JSON of Lemmy servers and Discourse forums with normal HTTP requests (no Browser Use); a forum that
+# answers 403 is read with a real Firefox on the runner instead (geckodriver),
 # reads the newest posts and their best comments, and sends them to the Flowsearch ingest, whose address is in
 # tunnel-url.txt (the server keeps that file up to date). The ingest says which posts it already has, so only the new ones are opened.
 # It runs every 6 hours; Actions > forumcrawl > Run workflow starts it by hand.
@@ -46,7 +47,7 @@ jobs:
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
-          ./bin/lemmycrawl -plain -remote "${{ steps.addr.outputs.url }}" \
+          ./bin/lemmycrawl -plain -firefox -remote "${{ steps.addr.outputs.url }}" \
             -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '60' }}" -browsers 12
       - name: Lemmy servers
         if: ${{ !cancelled() }}
@@ -54,5 +55,5 @@ jobs:
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
-          ./bin/lemmycrawl -plain -remote "${{ steps.addr.outputs.url }}" -new \
+          ./bin/lemmycrawl -plain -firefox -remote "${{ steps.addr.outputs.url }}" -new \
             -n "${{ inputs.new_lemmy || '3000' }}" -per 40 -browsers 12 -servers crawler/forums-lemmy.txt

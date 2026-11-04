@@ -20,8 +20,8 @@ on:
         description: "run only one job: lemmy, discourse, languages or amazon (empty: all four)"
         default: ""
       amazon_n:
-        description: "products to save from each Amazon site"
-        default: "300"
+        description: "products to save from each Amazon site (empty: no limit, until the 130 minutes are up)"
+        default: ""
       new_lemmy:
         description: "new Lemmy posts to read in all (0: no limit, until the time is up)"
         default: "0"
@@ -122,7 +122,9 @@ jobs:
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/amzdata -firefox -remote "$URL" -site amazon.de -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s
+          # 1. collect product numbers from many listing pages (Bestsellers, New releases, Movers, Most wished for, with their categories); 2. visit the new ones
+          ./bin/amzdata -firefox -site amazon.de -collect -shuffle -queue amz-de.txt
+          ./bin/amzdata -firefox -remote "$URL" -site amazon.de -queue amz-de.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes 130 -pause 1s -settle 1s
       - name: amazon.com (Firefox on this runner)
         if: ${{ !cancelled() }}
         timeout-minutes: 150
@@ -131,4 +133,5 @@ jobs:
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/amzdata -firefox -remote "$URL" -site amazon.com -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s
+          ./bin/amzdata -firefox -site amazon.com -collect -shuffle -queue amz-com.txt
+          ./bin/amzdata -firefox -remote "$URL" -site amazon.com -queue amz-com.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes 130 -pause 1s -settle 1s

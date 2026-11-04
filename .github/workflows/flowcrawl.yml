@@ -40,20 +40,13 @@ jobs:
         run: |
           ulimit -n 65000 || true
           { cat crawler/seeds-tranco.txt; echo; cat crawler/seeds-discovered.txt 2>/dev/null || true; } > all-seeds.txt
-          FAIL=0
-          : > all-discovered.txt
-          for B in $(seq ${{ inputs.first_batch }} $(( ${{ inputs.first_batch }} + ${{ inputs.batches }} - 1 ))); do
-            echo "::group::batch $B"
-            ./flowcrawl/target/release/flowcrawl \
-              --seeds all-seeds.txt \
-              --start $(( B * 500 )) --count 500 \
-              --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
-              --ingest "${{ inputs.ingest_url }}" || FAIL=1
-            { cat discovered.txt >> all-discovered.txt; } 2>/dev/null || true; echo >> all-discovered.txt
-            echo "::endgroup::"
-          done
-          sort -u all-discovered.txt > discovered.txt
-          exit $FAIL
+          # ONE crawler for the whole run: it keeps reading sites, and sends the ingest ONE request every time exactly 500 new pages are ready
+          # (batches of pages, nothing on a timer; only the very last request of the run can be smaller)
+          ./flowcrawl/target/release/flowcrawl \
+            --seeds all-seeds.txt \
+            --start $(( ${{ inputs.first_batch }} * 500 )) --count $(( ${{ inputs.batches }} * 500 )) \
+            --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
+            --ingest "${{ inputs.ingest_url }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

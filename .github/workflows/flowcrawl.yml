@@ -22,7 +22,7 @@ on:
         default: "20"
       pages_per_site:
         description: "pages read from each site"
-        default: "30"
+        default: "3747"
 
 permissions:
   actions: write

@@ -1,10 +1,10 @@
 name: flowcrawl
 
-# The Flowsearch crawl: ONE job. It builds the Rust crawler once, then reads batch after batch of 500 sites.
-# In a batch all 500 sites are read at the same time (plain requests, real Firefox for pages that need JavaScript),
-# and everything found goes to the Flowsearch ingest in ONE request. Sites: crawler/seeds-tranco.txt, then crawler/seeds-discovered.txt
-# (the sites the crawl itself found in links; a bot on the server keeps that file growing).
-# Start it by hand (Actions > flowcrawl > Run workflow) or let the box on the server do it (it runs `gh workflow run flowcrawl.yml`).
+# The Flowsearch crawl: ONE crawler per run. It reads the sites of crawler/seeds-tranco.txt followed by crawler/seeds-discovered.txt (the sites the
+# crawl found itself), follows links to other websites, and sends the ingest ONE request every time exactly 500 new pages are ready.
+# GitHub stops a job after 6 hours. So the crawler stops by itself after 5 hours 45 minutes (no new site is started, the running ones are finished,
+# the last pages are sent), and a second job waits 55 minutes and then starts the next run at the place where this one stopped.
+# Start it by hand (Actions > flowcrawl > Run workflow); after that it keeps itself going. Cancel the run to stop the chain.
 on:
   workflow_dispatch:
     inputs:
@@ -12,19 +12,29 @@ on:
         description: "address of the Flowsearch ingest (the cloudflared tunnel to port 8811), without /api/ingest"
         required: true
       first_batch:
-        description: "number of the first batch (batch N reads sites N*500 ...)"
+        description: "number of the first batch (batch N starts at site N*500); ignored when start_site is given"
         default: "0"
+      start_site:
+        description: "site number to start at (empty: first_batch * 500). The next runs fill this in themselves."
+        default: ""
       batches:
-        description: "how many batches, one after the other"
+        description: "how many batches of 500 seed sites this run may read (sites found in links come on top)"
         default: "20"
       pages_per_site:
         description: "pages read from each site"
         default: "30"
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   crawl:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 355
+    outputs:
+      next_start: ${{ steps.go.outputs.next_start }}
+      total_seeds: ${{ steps.go.outputs.total_seeds }}
     steps:
       - uses: actions/checkout@v4
       - name: get the prebuilt crawler (no build)
@@ -35,19 +45,23 @@ jobs:
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern flowcrawl --dir flowcrawl/target/release --clobber
           chmod +x flowcrawl/target/release/flowcrawl
       - name: crawl
+        id: go
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           ulimit -n 65000 || true
           { cat crawler/seeds-tranco.txt; echo; cat crawler/seeds-discovered.txt 2>/dev/null || true; } > all-seeds.txt
-          # ONE crawler for the whole run: it keeps reading sites, and sends the ingest ONE request every time exactly 500 new pages are ready
-          # (batches of pages, nothing on a timer; only the very last request of the run can be smaller)
+          echo "total_seeds=$(grep -c . all-seeds.txt)" >> "$GITHUB_OUTPUT"
+          START="${{ inputs.start_site }}"
+          if [ -z "$START" ]; then START=$(( ${{ inputs.first_batch }} * 500 )); fi
           ./flowcrawl/target/release/flowcrawl \
             --seeds all-seeds.txt \
-            --start $(( ${{ inputs.first_batch }} * 500 )) --count $(( ${{ inputs.batches }} * 500 )) \
+            --start "$START" --count $(( ${{ inputs.batches }} * 500 )) \
             --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
             --follow $(( ${{ inputs.batches }} * 500 * 2 )) \
+            --max-minutes 345 \
             --ingest "${{ inputs.ingest_url }}"
+          echo "next_start=$(cat next_start.txt 2>/dev/null || echo "$START")" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -55,3 +69,24 @@ jobs:
           path: discovered.txt
           retention-days: 2
           if-no-files-found: ignore
+
+  restart:
+    needs: crawl
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: wait 55 minutes, then start the next run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NEXT="${{ needs.crawl.outputs.next_start }}"
+          TOTAL="${{ needs.crawl.outputs.total_seeds }}"
+          if [ -z "$NEXT" ]; then NEXT="${{ inputs.start_site }}"; fi
+          if [ -z "$NEXT" ]; then NEXT=$(( ${{ inputs.first_batch }} * 500 )); fi
+          if [ -n "$TOTAL" ] && [ "$NEXT" -ge "$TOTAL" ]; then NEXT=0; fi   # the whole list is read: start again at the top
+          echo "the next run starts at site $NEXT, in 55 minutes"
+          sleep 3300
+          gh workflow run flowcrawl.yml --repo "$GITHUB_REPOSITORY" \
+            -f ingest_url="${{ inputs.ingest_url }}" -f start_site="$NEXT" \
+            -f batches="${{ inputs.batches }}" -f pages_per_site="${{ inputs.pages_per_site }}"

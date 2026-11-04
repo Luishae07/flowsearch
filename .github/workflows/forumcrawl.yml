@@ -115,15 +115,15 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern amzdata --dir bin --clobber
           chmod +x bin/amzdata
-      - name: amazon.de (Chrome on this runner)
+      - name: amazon.de (Firefox on this runner)
         timeout-minutes: 150
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/amzdata -chrome -remote "$URL" -site amazon.de -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s
-      - name: amazon.com (Chrome on this runner)
+          ./bin/amzdata -firefox -remote "$URL" -site amazon.de -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s
+      - name: amazon.com (Firefox on this runner)
         if: ${{ !cancelled() }}
         timeout-minutes: 150
         env:
@@ -131,4 +131,4 @@ jobs:
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/amzdata -chrome -remote "$URL" -site amazon.com -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s
+          ./bin/amzdata -firefox -remote "$URL" -site amazon.com -n "${{ inputs.amazon_n || '300' }}" -pause 1s -settle 1s

@@ -19,7 +19,7 @@ on:
         default: "20"
       pages_per_site:
         description: "pages read from each site"
-        default: "10"
+        default: "30"
 
 jobs:
   crawl:
@@ -46,6 +46,7 @@ jobs:
             --seeds all-seeds.txt \
             --start $(( ${{ inputs.first_batch }} * 500 )) --count $(( ${{ inputs.batches }} * 500 )) \
             --pages "${{ inputs.pages_per_site }}" --conc 500 --render 4 \
+            --follow $(( ${{ inputs.batches }} * 500 * 2 )) \
             --ingest "${{ inputs.ingest_url }}"
       - uses: actions/upload-artifact@v4
         if: always()

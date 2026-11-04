@@ -1,9 +1,12 @@
 name: forumcrawl
 
-# The forum crawl. The crawler fetches the public JSON of Lemmy servers and Discourse forums with normal HTTP requests (no Browser Use); a forum that
-# answers 403 is read with a real Firefox on the runner instead (geckodriver),
-# reads the newest posts and their best comments, and sends them to the Flowsearch ingest, whose address is in
-# tunnel-url.txt (the server keeps that file up to date). The ingest says which posts it already has, so only the new ones are opened.
+# The forum crawl, in 3 jobs that run at the same time:
+#   lemmy      the Lemmy servers (crawler/forums-lemmy.txt)
+#   discourse  the Discourse forums (crawler/forums-discourse.txt)
+#   languages  the Python forums and the forums of other programming languages (crawler/forums-languages.txt)
+# Each job fetches the public JSON of its forums with normal HTTP requests (no Browser Use); a forum that answers 403 is read with a real Firefox on the
+# runner instead (geckodriver). The newest posts and their best comments go to the Flowsearch ingest, whose address is in tunnel-url.txt (the server keeps
+# that file up to date). The ingest says which posts it already has, so only the new ones are opened.
 # It runs every 6 hours; Actions > forumcrawl > Run workflow starts it by hand.
 on:
   schedule:
@@ -13,18 +16,21 @@ on:
       ingest_url:
         description: "address of the ingest tunnel (empty: the one in tunnel-url.txt)"
         default: ""
+      new_lemmy:
+        description: "new Lemmy posts to read"
+        default: "3000"
       per_discourse:
         description: "topics read from each Discourse forum"
         default: "60"
-      new_lemmy:
-        description: "new Lemmy posts to read in all"
-        default: "3000"
+      per_languages:
+        description: "topics read from each Python / programming language forum"
+        default: "100"
 
 permissions:
   contents: read
 
 jobs:
-  forums:
+  lemmy:
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
@@ -36,24 +42,53 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
           chmod +x bin/lemmycrawl
-      - name: address of the ingest
-        id: addr
+      - name: Lemmy servers
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
-      - name: Discourse forums
-        timeout-minutes: 150
-        env:
-          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
-        run: |
-          ./bin/lemmycrawl -plain -firefox -remote "${{ steps.addr.outputs.url }}" \
-            -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '60' }}" -browsers 12
-      - name: Lemmy servers
-        if: ${{ !cancelled() }}
-        timeout-minutes: 170
-        env:
-          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
-        run: |
-          ./bin/lemmycrawl -plain -firefox -remote "${{ steps.addr.outputs.url }}" -new \
+          ./bin/lemmycrawl -plain -firefox -remote "$URL" -new \
             -n "${{ inputs.new_lemmy || '3000' }}" -per 40 -browsers 12 -servers crawler/forums-lemmy.txt
+
+  discourse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - name: get the prebuilt forum crawler (no build)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p bin
+          gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
+          chmod +x bin/lemmycrawl
+      - name: Discourse forums
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL="${{ inputs.ingest_url }}"
+          if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
+          ./bin/lemmycrawl -plain -firefox -remote "$URL" \
+            -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '60' }}" -browsers 12
+
+  languages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - name: get the prebuilt forum crawler (no build)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p bin
+          gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
+          chmod +x bin/lemmycrawl
+      - name: Python and other programming language forums
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL="${{ inputs.ingest_url }}"
+          if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
+          ./bin/lemmycrawl -plain -firefox -remote "$URL" \
+            -discourse crawler/forums-languages.txt -per "${{ inputs.per_languages || '100' }}" -browsers 12

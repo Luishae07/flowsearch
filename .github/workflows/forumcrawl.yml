@@ -10,11 +10,8 @@ name: forumcrawl
 # that file up to date). The ingest says which posts it already has, so only the new ones are opened.
 # It never stops by itself: a job can run 6 hours at most, so inside a job the crawl starts again and again until about 5.5 hours are used (a new pass only
 # opens what is new), and when all jobs are done the last job starts this workflow again. Cancel the run to stop the chain.
-# Every 6 hours the schedule also starts it, in case the chain was broken; only one run is active at a time (the next waits).
-# Actions > forumcrawl > Run workflow starts it by hand.
+# There is no schedule: only one run is active at a time (the next waits). Actions > forumcrawl > Run workflow starts it by hand.
 on:
-  schedule:
-    - cron: "23 */6 * * *"
   workflow_dispatch:
     inputs:
       ingest_url:

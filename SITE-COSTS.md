@@ -4,98 +4,107 @@ Bandwidth only, at **$0.085/GB** and **1000 visits per hour**. Every site's home
 
 | Site | Page weight | of which JavaScript | Requests | $ per 1,000 visits | $ per hour | $ per 10 hours |
 |---|---:|---:|---:|---:|---:|---:|
-| windows.com | 36822 KB | 2580 KB | 100 | 3.2050 | 3.2050 | 32.0500 |
-| opencode.ai | 10453 KB | 234 KB | 26 | 0.9099 | 0.9099 | 9.0992 |
-| tiktok.com | 10041 KB | 6104 KB | 423 | 0.8741 | 0.8741 | 8.7405 |
-| yuga.com | 8485 KB | 750 KB | 124 | 0.7386 | 0.7386 | 7.3858 |
-| microsoft.com | 8304 KB | 2682 KB | 269 | 0.7229 | 0.7229 | 7.2285 |
-| vimeo.com | 8251 KB | 4513 KB | 197 | 0.7182 | 0.7182 | 7.1824 |
-| roblox.com | 8127 KB | 4292 KB | 203 | 0.7074 | 0.7074 | 7.0743 |
-| qq.com | 7058 KB | 1389 KB | 216 | 0.6144 | 0.6144 | 6.1438 |
-| azure.com | 6739 KB | 3690 KB | 179 | 0.5866 | 0.5866 | 5.8661 |
-| gemini.google.com | 6433 KB | 4344 KB | 123 | 0.5600 | 0.5600 | 5.5997 |
-| live.com | 5644 KB | 3721 KB | 133 | 0.4913 | 0.4913 | 4.9132 |
-| sharepoint.com | 5551 KB | 3012 KB | 150 | 0.4832 | 0.4832 | 4.8323 |
-| mail.ru | 5225 KB | 3039 KB | 224 | 0.4548 | 0.4548 | 4.5480 |
-| nginx.com | 4925 KB | 4469 KB | 164 | 0.4287 | 0.4287 | 4.2874 |
-| f5.com | 4790 KB | 4470 KB | 166 | 0.4169 | 0.4169 | 4.1693 |
-| samsung.com | 4629 KB | 2843 KB | 242 | 0.4029 | 0.4029 | 4.0295 |
-| bing.com | 4557 KB | 2089 KB | 347 | 0.3967 | 0.3967 | 3.9669 |
-| yahoo.com | 4257 KB | 2860 KB | 273 | 0.3705 | 0.3705 | 3.7054 |
-| zoom.us | 4138 KB | 2476 KB | 212 | 0.3603 | 0.3603 | 3.6026 |
-| spotify.com | 4054 KB | 2893 KB | 146 | 0.3529 | 0.3529 | 3.5288 |
-| youtu.be | 3986 KB | 3060 KB | 42 | 0.3470 | 0.3470 | 3.4701 |
-| youtube.com | 3969 KB | 3059 KB | 42 | 0.3455 | 0.3455 | 3.4554 |
-| pinterest.com | 3847 KB | 2561 KB | 125 | 0.3349 | 0.3349 | 3.3493 |
-| yandex.ru | 3685 KB | 2515 KB | 104 | 0.3208 | 0.3208 | 3.2076 |
-| msn.com | 3681 KB | 2051 KB | 219 | 0.3204 | 0.3204 | 3.2043 |
-| dzen.ru | 3589 KB | 2515 KB | 118 | 0.3125 | 0.3125 | 3.1246 |
-| office.com | 3458 KB | 974 KB | 64 | 0.3010 | 0.3010 | 3.0100 |
-| cloud.microsoft | 3449 KB | 957 KB | 66 | 0.3002 | 0.3002 | 3.0024 |
-| huggingface.co | 3177 KB | 724 KB | 59 | 0.2765 | 0.2765 | 2.7653 |
-| workers.dev | 3066 KB | 2189 KB | 150 | 0.2669 | 0.2669 | 2.6692 |
-| github.com | 3019 KB | 1962 KB | 164 | 0.2628 | 0.2628 | 2.6282 |
-| cloudflare.com | 2809 KB | 1769 KB | 181 | 0.2446 | 0.2446 | 2.4458 |
-| ui.com | 2782 KB | 1092 KB | 139 | 0.2422 | 0.2422 | 2.4221 |
-| netflix.com | 2693 KB | 1377 KB | 57 | 0.2344 | 0.2344 | 2.3443 |
-| instagram.com | 2484 KB | 1463 KB | 49 | 0.2162 | 0.2162 | 2.1623 |
-| b-cdn.net | 2308 KB | 1095 KB | 128 | 0.2010 | 0.2010 | 2.0097 |
-| qwen.ai | 2263 KB | 767 KB | 77 | 0.1970 | 0.1970 | 1.9702 |
-| sentry.io | 2179 KB | 503 KB | 57 | 0.1897 | 0.1897 | 1.8969 |
-| skype.com | 2061 KB | 160 KB | 32 | 0.1794 | 0.1794 | 1.7943 |
-| icloud.com | 2039 KB | 828 KB | 28 | 0.1775 | 0.1775 | 1.7749 |
-| wordpress.org | 1928 KB | 352 KB | 47 | 0.1678 | 0.1678 | 1.6784 |
-| claude.com | 1925 KB | 720 KB | 52 | 0.1676 | 0.1676 | 1.6758 |
-| fbcdn.net | 1850 KB | 1229 KB | 35 | 0.1611 | 0.1611 | 1.6109 |
-| facebook.com | 1800 KB | 1229 KB | 32 | 0.1567 | 0.1567 | 1.5674 |
-| actify.nl | 1772 KB | 762 KB | 107 | 0.1543 | 0.1543 | 1.5430 |
-| myfritz.net | 1708 KB | 908 KB | 43 | 0.1487 | 0.1487 | 1.4874 |
-| stackoverflow.com | 1679 KB | 1094 KB | 76 | 0.1462 | 0.1462 | 1.4617 |
-| apple.com | 1612 KB | 420 KB | 45 | 0.1404 | 0.1404 | 1.4035 |
-| blogspot.com | 1355 KB | 14 KB | 53 | 0.1180 | 0.1180 | 1.1801 |
-| wordpress.com | 1323 KB | 783 KB | 57 | 0.1152 | 0.1152 | 1.1524 |
-| whatsapp.com | 1278 KB | 505 KB | 46 | 0.1113 | 0.1113 | 1.1125 |
-| whatsapp.net | 1274 KB | 505 KB | 45 | 0.1110 | 0.1110 | 1.1097 |
-| opera.com | 1263 KB | 955 KB | 67 | 0.1100 | 0.1100 | 1.0998 |
-| yandex.net | 1244 KB | 371 KB | 63 | 0.1083 | 0.1083 | 1.0829 |
-| firefox.com | 887 KB | 569 KB | 47 | 0.0772 | 0.0772 | 0.7722 |
-| linkedin.com | 851 KB | 748 KB | 42 | 0.0741 | 0.0741 | 0.7411 |
-| luishae07.github.io | 830 KB | 49 KB | 19 | 0.0722 | 0.0722 | 0.7225 |
-| grants-governmental-wma-out.trycloudflare.com | 809 KB | 49 KB | 19 | 0.0705 | 0.0705 | 0.7045 |
-| google.com | 807 KB | 732 KB | 38 | 0.0703 | 0.0703 | 0.7032 |
-| t.me | 707 KB | 22 KB | 30 | 0.0615 | 0.0615 | 0.6155 |
-| mozilla.org | 604 KB | 375 KB | 46 | 0.0526 | 0.0526 | 0.5261 |
-| jjkincreamtaln.noahboah2812.workers.dev | 591 KB | 516 KB | 7 | 0.0514 | 0.0514 | 0.5145 |
-| ntp.org | 581 KB | 379 KB | 33 | 0.0507 | 0.0507 | 0.5065 |
-| cloudflare-dns.com | 578 KB | 46 KB | 11 | 0.0504 | 0.0504 | 0.5036 |
-| nic.ru | 577 KB | 72 KB | 24 | 0.0502 | 0.0502 | 0.5025 |
-| cloudflare.net | 427 KB | 242 KB | 6 | 0.0372 | 0.0372 | 0.3718 |
-| cpstest.org | 417 KB | 231 KB | 7 | 0.0364 | 0.0364 | 0.3636 |
-| openai.com | 407 KB | 226 KB | 5 | 0.0355 | 0.0355 | 0.3546 |
-| chatgpt.com | 405 KB | 226 KB | 5 | 0.0353 | 0.0353 | 0.3531 |
-| shortypower.org | 398 KB | 264 KB | 36 | 0.0346 | 0.0346 | 0.3465 |
-| wa.me | 357 KB | n/a | 13 | 0.0311 | 0.0311 | 0.3109 |
-| palera.in | 348 KB | 12 KB | 11 | 0.0303 | 0.0303 | 0.3030 |
-| gandi.net | 343 KB | 170 KB | 22 | 0.0299 | 0.0299 | 0.2994 |
-| digicert.com | 264 KB | 257 KB | 8 | 0.0230 | 0.0230 | 0.2300 |
-| baidu.com | 258 KB | n/a | 14 | 0.0225 | 0.0225 | 0.2250 |
-| reddit.com | 189 KB | 0 KB | 3 | 0.0165 | 0.0165 | 0.1647 |
-| sonde.mine.nu | 133 KB | 53 KB | 8 | 0.0116 | 0.0116 | 0.1158 |
-| fogcam.org | 122 KB | 0 KB | 4 | 0.0107 | 0.0107 | 0.1071 |
-| twitter.com | 89 KB | n/a | 4 | 0.0078 | 0.0078 | 0.0781 |
-| x.com | 89 KB | n/a | 4 | 0.0078 | 0.0078 | 0.0781 |
-| wikipedia.org | 77 KB | 11 KB | 6 | 0.0067 | 0.0067 | 0.0673 |
-| googledomains.com | 75 KB | 0 KB | 7 | 0.0066 | 0.0066 | 0.0658 |
-| amazon.com | 57 KB | 0 KB | 4 | 0.0050 | 0.0050 | 0.0504 |
-| nginx.org | 55 KB | 0 KB | 8 | 0.0048 | 0.0048 | 0.0481 |
-| codeybox.luishae0701.workers.dev | 25 KB | 0 KB | 2 | 0.0022 | 0.0022 | 0.0224 |
-| googletagmanager.com | 12 KB | 0 KB | 4 | 0.0011 | 0.0011 | 0.0110 |
-| goo.gl | 8 KB | 0 KB | 3 | 0.0007 | 0.0007 | 0.0073 |
-| info.cern.ch | 2 KB | 0 KB | 2 | 0.0002 | 0.0002 | 0.0022 |
-| example.org | 2 KB | 1 KB | 2 | 0.0002 | 0.0002 | 0.0019 |
-| endpoints.news | 2 KB | 0 KB | 2 | 0.0002 | 0.0002 | 0.0022 |
-| tiktokv.com | 1 KB | 0 KB | 2 | 0.0002 | 0.0002 | 0.0017 |
-| appsflyersdk.com | 0 KB | 0 KB | 3 | 0.0001 | 0.0001 | 0.0006 |
-| adobe.com | 1 KB | 0 KB | 2 | 0.0001 | 0.0001 | 0.0014 |
+| windows.com | 39718 KB | n/a | 26 | 3.4571 | 3.4571 | 34.5707 |
+| actify.nl | 3529 KB | n/a | 24 | 0.3072 | 0.3072 | 3.0719 |
+| vimeo.com | 3511 KB | n/a | 26 | 0.3057 | 0.3057 | 3.0565 |
+| wordpress.org | 2785 KB | n/a | 20 | 0.2424 | 0.2424 | 2.4243 |
+| myfritz.net | 2738 KB | n/a | 26 | 0.2383 | 0.2383 | 2.3835 |
+| live.com | 2259 KB | n/a | 12 | 0.1966 | 0.1966 | 1.9664 |
+| outlook.com | 2246 KB | n/a | 12 | 0.1955 | 0.1955 | 1.9554 |
+| github.io | 2169 KB | n/a | 18 | 0.1888 | 0.1888 | 1.8883 |
+| apple.com | 2081 KB | n/a | 26 | 0.1812 | 0.1812 | 1.8119 |
+| digicert.com | 1838 KB | n/a | 26 | 0.1600 | 0.1600 | 1.6003 |
+| f5.com | 1818 KB | n/a | 20 | 0.1583 | 0.1583 | 1.5825 |
+| samsung.com | 1811 KB | n/a | 25 | 0.1577 | 0.1577 | 1.5768 |
+| instagram.com | 1758 KB | n/a | 18 | 0.1530 | 0.1530 | 1.5302 |
+| netflix.com | 1726 KB | n/a | 10 | 0.1503 | 0.1503 | 1.5025 |
+| spotify.com | 1599 KB | n/a | 17 | 0.1393 | 0.1393 | 1.3926 |
+| wordpress.com | 1497 KB | n/a | 20 | 0.1303 | 0.1303 | 1.3034 |
+| huggingface.co | 1382 KB | n/a | 9 | 0.1203 | 0.1203 | 1.2030 |
+| pinterest.com | 1247 KB | n/a | 26 | 0.1086 | 0.1086 | 1.0862 |
+| bing.com | 1116 KB | n/a | 7 | 0.0971 | 0.0971 | 0.9715 |
+| icloud.com | 1076 KB | n/a | 6 | 0.0937 | 0.0937 | 0.9372 |
+| tiktok.com | 1044 KB | n/a | 26 | 0.0909 | 0.0909 | 0.9093 |
+| cloud.microsoft | 999 KB | n/a | 26 | 0.0870 | 0.0870 | 0.8704 |
+| office.com | 999 KB | n/a | 26 | 0.0870 | 0.0870 | 0.8704 |
+| intuit.com | 935 KB | n/a | 25 | 0.0814 | 0.0814 | 0.8140 |
+| amazonvideo.com | 925 KB | n/a | 26 | 0.0806 | 0.0806 | 0.8059 |
+| amazon.com | 872 KB | n/a | 26 | 0.0760 | 0.0760 | 0.7599 |
+| qq.com | 817 KB | n/a | 11 | 0.0711 | 0.0711 | 0.7114 |
+| msn.com | 781 KB | n/a | 6 | 0.0680 | 0.0680 | 0.6798 |
+| yahoo.com | 753 KB | n/a | 13 | 0.0656 | 0.0656 | 0.6559 |
+| zoom.us | 742 KB | n/a | 14 | 0.0646 | 0.0646 | 0.6460 |
+| microsoft.com | 630 KB | n/a | 25 | 0.0549 | 0.0549 | 0.5488 |
+| github.com | 575 KB | n/a | 26 | 0.0501 | 0.0501 | 0.5012 |
+| sharepoint.com | 545 KB | n/a | 25 | 0.0474 | 0.0474 | 0.4744 |
+| jjkincreamtaln.noahboah2812.workers.dev | 535 KB | n/a | 2 | 0.0466 | 0.0466 | 0.4663 |
+| afternic.com | 532 KB | n/a | 25 | 0.0464 | 0.0464 | 0.4639 |
+| qwen.ai | 520 KB | n/a | 25 | 0.0453 | 0.0453 | 0.4533 |
+| opera.com | 468 KB | n/a | 26 | 0.0408 | 0.0408 | 0.4079 |
+| office365.com | 467 KB | n/a | 25 | 0.0407 | 0.0407 | 0.4066 |
+| facebook.com | 467 KB | n/a | 4 | 0.0407 | 0.0407 | 0.4068 |
+| nih.gov | 438 KB | n/a | 25 | 0.0382 | 0.0382 | 0.3818 |
+| skype.com | 429 KB | n/a | 26 | 0.0374 | 0.0374 | 0.3738 |
+| dropbox.com | 426 KB | n/a | 7 | 0.0372 | 0.0372 | 0.3715 |
+| whatsapp.net | 407 KB | n/a | 26 | 0.0355 | 0.0355 | 0.3548 |
+| whatsapp.com | 407 KB | n/a | 26 | 0.0355 | 0.0355 | 0.3549 |
+| bit.ly | 374 KB | n/a | 17 | 0.0326 | 0.0326 | 0.3262 |
+| wa.me | 355 KB | n/a | 13 | 0.0310 | 0.0310 | 0.3097 |
+| baidu.com | 353 KB | n/a | 14 | 0.0308 | 0.0308 | 0.3078 |
+| youtube.com | 339 KB | n/a | 17 | 0.0296 | 0.0296 | 0.2956 |
+| youtu.be | 339 KB | n/a | 17 | 0.0296 | 0.0296 | 0.2957 |
+| palera.in | 331 KB | n/a | 6 | 0.0289 | 0.0289 | 0.2888 |
+| gandi.net | 309 KB | n/a | 21 | 0.0270 | 0.0270 | 0.2695 |
+| roblox.com | 308 KB | n/a | 24 | 0.0268 | 0.0268 | 0.2685 |
+| yandex.net | 307 KB | n/a | 15 | 0.0268 | 0.0268 | 0.2680 |
+| cloudflare.com | 294 KB | n/a | 1 | 0.0257 | 0.0257 | 0.2567 |
+| azure.com | 241 KB | n/a | 26 | 0.0210 | 0.0210 | 0.2105 |
+| gemini.google.com | 230 KB | n/a | 6 | 0.0201 | 0.0201 | 0.2010 |
+| shortypower.org | 216 KB | n/a | 22 | 0.0188 | 0.0188 | 0.1881 |
+| ui.com | 212 KB | n/a | 9 | 0.0185 | 0.0185 | 0.1854 |
+| nginx.com | 202 KB | n/a | 5 | 0.0177 | 0.0177 | 0.1765 |
+| ntp.org | 199 KB | n/a | 18 | 0.0174 | 0.0174 | 0.1737 |
+| apache.org | 191 KB | n/a | 26 | 0.0167 | 0.0167 | 0.1670 |
+| reddit.com | 185 KB | n/a | 1 | 0.0162 | 0.0162 | 0.1617 |
+| blogspot.com | 185 KB | n/a | 15 | 0.0162 | 0.0162 | 0.1616 |
+| x.com | 182 KB | n/a | 7 | 0.0159 | 0.0159 | 0.1593 |
+| twitter.com | 182 KB | n/a | 7 | 0.0159 | 0.0159 | 0.1593 |
+| wikipedia.org | 181 KB | n/a | 12 | 0.0158 | 0.0158 | 0.1583 |
+| claude.com | 153 KB | n/a | 1 | 0.0133 | 0.0133 | 0.1334 |
+| luishae07.github.io | 132 KB | n/a | 10 | 0.0116 | 0.0116 | 0.1156 |
+| grants-governmental-wma-out.trycloudflare.com | 120 KB | n/a | 7 | 0.0105 | 0.0105 | 0.1046 |
+| chatgpt.com | 120 KB | n/a | 1 | 0.0105 | 0.0105 | 0.1051 |
+| firefox.com | 119 KB | n/a | 22 | 0.0104 | 0.0104 | 0.1040 |
+| mozilla.org | 83 KB | n/a | 26 | 0.0073 | 0.0073 | 0.0729 |
+| sonde.mine.nu | 81 KB | n/a | 5 | 0.0071 | 0.0071 | 0.0709 |
+| google.com | 43 KB | n/a | 4 | 0.0038 | 0.0038 | 0.0377 |
+| vk.com | 44 KB | n/a | 3 | 0.0038 | 0.0038 | 0.0384 |
+| snapchat.com | 38 KB | n/a | 1 | 0.0034 | 0.0034 | 0.0335 |
+| nginx.org | 37 KB | n/a | 7 | 0.0033 | 0.0033 | 0.0328 |
+| europa.eu | 37 KB | n/a | 6 | 0.0033 | 0.0033 | 0.0329 |
+| adobe.com | 30 KB | n/a | 14 | 0.0027 | 0.0027 | 0.0266 |
+| t.me | 27 KB | n/a | 5 | 0.0024 | 0.0024 | 0.0241 |
+| codeybox.luishae0701.workers.dev | 23 KB | n/a | 1 | 0.0020 | 0.0020 | 0.0203 |
+| linkedin.com | 20 KB | n/a | 1 | 0.0018 | 0.0018 | 0.0181 |
+| opencode.ai | 14 KB | n/a | 1 | 0.0013 | 0.0013 | 0.0130 |
+| nic.ru | 13 KB | n/a | 1 | 0.0012 | 0.0012 | 0.0116 |
+| reg.ru | 13 KB | n/a | 1 | 0.0012 | 0.0012 | 0.0116 |
+| googledomains.com | 13 KB | n/a | 6 | 0.0012 | 0.0012 | 0.0115 |
+| epicgames.com | 9 KB | n/a | 1 | 0.0008 | 0.0008 | 0.0081 |
+| yuga.com | 9 KB | n/a | 2 | 0.0008 | 0.0008 | 0.0084 |
+| goo.gl | 6 KB | n/a | 1 | 0.0006 | 0.0006 | 0.0055 |
+| openai.com | 5 KB | n/a | 1 | 0.0005 | 0.0005 | 0.0047 |
+| cloudflare.net | 3 KB | n/a | 1 | 0.0003 | 0.0003 | 0.0027 |
+| cpstest.org | 3 KB | n/a | 1 | 0.0003 | 0.0003 | 0.0027 |
+| stackoverflow.com | 3 KB | n/a | 1 | 0.0003 | 0.0003 | 0.0027 |
+| dzen.ru | 1 KB | n/a | 1 | 0.0002 | 0.0002 | 0.0016 |
+| yandex.ru | 1 KB | n/a | 1 | 0.0002 | 0.0002 | 0.0016 |
+| fogcam.org | 2 KB | n/a | 1 | 0.0002 | 0.0002 | 0.0019 |
+| mail.ru | 1 KB | n/a | 2 | 0.0001 | 0.0001 | 0.0013 |
+| endpoints.news | 0 KB | n/a | 1 | 0.0001 | 0.0001 | 0.0008 |
+| info.cern.ch | 0 KB | n/a | 1 | 0.0001 | 0.0001 | 0.0005 |
+| app-measurement.com | 1 KB | n/a | 1 | 0.0001 | 0.0001 | 0.0013 |
+| tiktokv.com | 0 KB | n/a | 1 | 0.0000 | 0.0000 | 0.0001 |
+| example.org | 0 KB | n/a | 1 | 0.0000 | 0.0000 | 0.0003 |
 
-Could not load: a2z.com, aaplimg.com, akadns.net, akam.net, akamai.net, apple-dns.net, cdninstagram.com, dellemc.com, domaincontrol.com, ezviz7.com, googlevideo.com, gtld-servers.net, gvt1.com, gvt2.com, gwfb.net, hicloudcam.com, microsoftonline.com, neverssl.com, office.net, pv-cdn.net, root-servers.net, tiktokcdn.com, trafficmanager.net, windowsupdate.com, yccdn.ru, ytimg.com
+Could not load: 3gppnetwork.org, a2z.com, aaplimg.com, akam.net, amazon.dev, aws.dev, dellemc.com, ezviz7.com, googlevideo.com, gvt1.com, gvt2.com, gwfb.net, hicloudcam.com, microsoftonline.com, neverssl.com, office.net, static.microsoft

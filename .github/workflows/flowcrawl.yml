@@ -4,12 +4,9 @@ name: flowcrawl
 # crawl found itself), follows links to other websites, and sends the ingest ONE request every time exactly 500 new pages are ready.
 # GitHub stops a job after 6 hours. So the crawler stops by itself after 5 hours 45 minutes (no new site is started, the running ones are finished,
 # the last pages are sent), and a second job waits 4 minutes and then starts the next run at the place where this one stopped.
-# It starts by itself every 6 hours (the schedule below; a run that is already going makes the new one wait, so there is only ever one crawl) and
-# keeps itself going after that. A run started by the schedule reads the address of the ingest from tunnel-url.txt and starts at site 0.
-# Start it by hand (Actions > flowcrawl > Run workflow) to choose the place to start. Cancel the run to stop the chain.
+# There is no schedule: it only runs when started by hand (Actions > flowcrawl > Run workflow, to choose the place to start), and then keeps itself
+# going. Cancel the run to stop the chain.
 on:
-  schedule:
-    - cron: "41 */6 * * *"
   workflow_dispatch:
     inputs:
       ingest_url:

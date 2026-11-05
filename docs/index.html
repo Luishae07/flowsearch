@@ -51,6 +51,14 @@ iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:var(--b
       f.src = u + rest + location.search + location.hash;
       document.body.textContent = '';
       document.body.appendChild(f);
+      // the site tells this page where it is (a search, a page ...); the address bar and the title follow, so a reload or a shared link opens the same page
+      window.addEventListener('message', function (e) {
+        if (e.origin !== u || e.source !== f.contentWindow || !e.data || e.data.flowsearch !== 1) return;
+        var p = String(e.data.path || '/');
+        if (p.charAt(0) !== '/' || p.charAt(1) === '/' || p.length > 2000) return;
+        try { history.replaceState(null, '', BASE + p); } catch (x) {}
+        if (e.data.title) document.title = String(e.data.title).slice(0, 200);
+      });
     })
     .catch(function () {
       document.getElementById('msg').textContent = 'Flowsearch is not reachable right now.';

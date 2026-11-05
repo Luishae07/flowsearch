@@ -41,3 +41,9 @@ forum.modular.com
 forum.vuejs.org
 forums.fast.ai
 discuss.tvm.apache.org
+community.neo4j.com
+discuss.dgraph.io
+discuss.emberjs.com
+forum.rescript-lang.org
+discourse.purescript.org
+discourse.nixos.org

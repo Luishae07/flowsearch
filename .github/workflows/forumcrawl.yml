@@ -1,6 +1,7 @@
 name: forumcrawl
 
-# The crawl, in 4 jobs that run at the same time (the 4th, amazon, reads Amazon products in Firefox on the runner and sends them to the ingest):
+# The crawl, in 5 jobs that run at the same time (amazon reads Amazon products in Firefox on the runner, roblox reads Roblox games in Chrome (Firefox if Chrome
+# does not start); both send what they read to the ingest):
 #   lemmy      the Lemmy servers (crawler/forums-lemmy.txt)
 #   discourse  the Discourse forums (crawler/forums-discourse.txt)
 #   languages  the Python forums and the forums of other programming languages (crawler/forums-languages.txt)
@@ -20,7 +21,7 @@ on:
         description: "address of the ingest tunnel (empty: the one in tunnel-url.txt)"
         default: ""
       only:
-        description: "run only one job: lemmy, discourse, languages or amazon (empty: all four)"
+        description: "run only one job: lemmy, discourse, languages, amazon or roblox (empty: all five)"
         default: ""
       amazon_n:
         description: "products to save from each Amazon site per pass (empty: no limit)"
@@ -168,9 +169,38 @@ jobs:
             sleep 60
           done
 
+  roblox:
+    if: ${{ inputs.only == '' || inputs.only == 'roblox' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - name: get the prebuilt Roblox crawler (no build)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p bin
+          gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern rbxcrawl --dir bin --clobber
+          chmod +x bin/rbxcrawl
+      - name: Roblox games (Chrome, or Firefox if Chrome does not start; pass after pass)
+        env:
+          MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
+        run: |
+          URL="${{ inputs.ingest_url }}"
+          if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
+          END=$((SECONDS + 330*60))
+          while [ $((END - SECONDS)) -gt 180 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            # 1. the game addresses from Roblox's sitemaps; 2. the ingest says which are new; those are opened
+            ./bin/rbxcrawl -collect -queue rbx-games.txt || true
+            ./bin/rbxcrawl -chrome -remote "$URL" -queue rbx-games.txt -minutes "$LEFT" -pause 200ms \
+              || ./bin/rbxcrawl -firefox -remote "$URL" -queue rbx-games.txt -minutes "$LEFT" -pause 200ms || true
+            sleep 60
+          done
+
   again:
     # when every job is done, start the whole crawl again (not when the run was cancelled)
-    needs: [lemmy, discourse, languages, amazon]
+    needs: [lemmy, discourse, languages, amazon, roblox]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10

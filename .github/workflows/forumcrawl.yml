@@ -1,13 +1,16 @@
 name: forumcrawl
 
-# The crawl, in 4 jobs that run at the same time (the 4th, amazon, reads Amazon products in a real Chrome on the runner and sends them to the ingest):
+# The crawl, in 4 jobs that run at the same time (the 4th, amazon, reads Amazon products in Firefox on the runner and sends them to the ingest):
 #   lemmy      the Lemmy servers (crawler/forums-lemmy.txt)
 #   discourse  the Discourse forums (crawler/forums-discourse.txt)
 #   languages  the Python forums and the forums of other programming languages (crawler/forums-languages.txt)
 # Each job fetches the public JSON of its forums with normal HTTP requests (no Browser Use); a forum that answers 403 is read with a real Firefox on the
 # runner instead (geckodriver). The newest posts and their best comments go to the Flowsearch ingest, whose address is in tunnel-url.txt (the server keeps
 # that file up to date). The ingest says which posts it already has, so only the new ones are opened.
-# It runs every 6 hours; Actions > forumcrawl > Run workflow starts it by hand.
+# It never stops by itself: a job can run 6 hours at most, so inside a job the crawl starts again and again until about 5.5 hours are used (a new pass only
+# opens what is new), and when all jobs are done the last job starts this workflow again. Cancel the run to stop the chain.
+# Every 6 hours the schedule also starts it, in case the chain was broken; only one run is active at a time (the next waits).
+# Actions > forumcrawl > Run workflow starts it by hand.
 on:
   schedule:
     - cron: "23 */6 * * *"
@@ -20,10 +23,10 @@ on:
         description: "run only one job: lemmy, discourse, languages or amazon (empty: all four)"
         default: ""
       amazon_n:
-        description: "products to save from each Amazon site (empty: no limit, until the 130 minutes are up)"
+        description: "products to save from each Amazon site per pass (empty: no limit)"
         default: ""
       new_lemmy:
-        description: "new Lemmy posts to read in all (0: no limit, until the time is up)"
+        description: "new Lemmy posts to read per pass (0: no limit, until the time is up)"
         default: "0"
       per_discourse:
         description: "topics read from each Discourse forum (0: no limit, the forum is read until its topics run out)"
@@ -35,11 +38,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: forumcrawl
+  cancel-in-progress: false
+
 jobs:
   lemmy:
     if: ${{ inputs.only == '' || inputs.only == 'lemmy' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - name: get the prebuilt forum crawler (no build)
@@ -49,19 +56,24 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
           chmod +x bin/lemmycrawl
-      - name: Lemmy servers
+      - name: Lemmy servers (pass after pass until the time is used)
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/lemmycrawl -plain -firefox -remote "$URL" -new \
-            -n "${{ inputs.new_lemmy || '0' }}" -per 0 -minutes 330 -hostminutes 25 -browsers 12 -servers crawler/forums-lemmy.txt
+          END=$((SECONDS + 330*60))
+          while [ $((END - SECONDS)) -gt 180 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            ./bin/lemmycrawl -plain -firefox -remote "$URL" -new \
+              -n "${{ inputs.new_lemmy || '0' }}" -per 0 -minutes "$LEFT" -hostminutes 25 -browsers 12 -servers crawler/forums-lemmy.txt || true
+            sleep 60
+          done
 
   discourse:
     if: ${{ inputs.only == '' || inputs.only == 'discourse' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - name: get the prebuilt forum crawler (no build)
@@ -71,19 +83,24 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
           chmod +x bin/lemmycrawl
-      - name: Discourse forums
+      - name: Discourse forums (pass after pass until the time is used)
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/lemmycrawl -plain -firefox -remote "$URL" \
-            -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '0' }}" -minutes 330 -hostminutes 20 -browsers 12
+          END=$((SECONDS + 330*60))
+          while [ $((END - SECONDS)) -gt 180 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            ./bin/lemmycrawl -plain -firefox -remote "$URL" \
+              -discourse crawler/forums-discourse.txt -per "${{ inputs.per_discourse || '0' }}" -minutes "$LEFT" -hostminutes 20 -browsers 12 || true
+            sleep 60
+          done
 
   languages:
     if: ${{ inputs.only == '' || inputs.only == 'languages' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - name: get the prebuilt forum crawler (no build)
@@ -93,19 +110,24 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern lemmycrawl --dir bin --clobber
           chmod +x bin/lemmycrawl
-      - name: Python and other programming language forums
+      - name: Python and other programming language forums (pass after pass until the time is used)
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/lemmycrawl -plain -firefox -remote "$URL" \
-            -discourse crawler/forums-languages.txt -per "${{ inputs.per_languages || '0' }}" -minutes 330 -hostminutes 25 -browsers 12
+          END=$((SECONDS + 330*60))
+          while [ $((END - SECONDS)) -gt 180 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            ./bin/lemmycrawl -plain -firefox -remote "$URL" \
+              -discourse crawler/forums-languages.txt -per "${{ inputs.per_languages || '0' }}" -minutes "$LEFT" -hostminutes 25 -browsers 12 || true
+            sleep 60
+          done
 
   amazon:
     if: ${{ inputs.only == '' || inputs.only == 'amazon' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
       - name: get the prebuilt Amazon crawler (no build)
@@ -115,23 +137,50 @@ jobs:
           mkdir -p bin
           gh release download flowcrawl-bin --repo "$GITHUB_REPOSITORY" --pattern amzdata --dir bin --clobber
           chmod +x bin/amzdata
-      - name: amazon.de (Firefox on this runner)
-        timeout-minutes: 150
+      - name: amazon.de (Firefox on this runner, pass after pass)
+        timeout-minutes: 165
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          # 1. collect product numbers from many listing pages (Bestsellers, New releases, Movers, Most wished for, with their categories); 2. visit the new ones
-          ./bin/amzdata -firefox -site amazon.de -collect -shuffle -queue amz-de.txt
-          ./bin/amzdata -firefox -remote "$URL" -site amazon.de -queue amz-de.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes 130 -pause 1s -settle 1s
-      - name: amazon.com (Firefox on this runner)
+          END=$((SECONDS + 155*60))
+          while [ $((END - SECONDS)) -gt 300 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            # 1. collect product numbers from many listing pages (Bestsellers, New releases, Movers, Most wished for, with their categories); 2. visit the new ones
+            ./bin/amzdata -firefox -site amazon.de -collect -shuffle -queue amz-de.txt || true
+            ./bin/amzdata -firefox -remote "$URL" -site amazon.de -queue amz-de.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes "$((LEFT-5))" -pause 1s -settle 1s || true
+            sleep 60
+          done
+      - name: amazon.com (Firefox on this runner, pass after pass)
         if: ${{ !cancelled() }}
-        timeout-minutes: 150
+        timeout-minutes: 165
         env:
           MYSEARCH_TOKEN: ${{ secrets.MYSEARCH_TOKEN }}
         run: |
           URL="${{ inputs.ingest_url }}"
           if [ -z "$URL" ]; then URL=$(tr -d '[:space:]' < tunnel-url.txt); fi
-          ./bin/amzdata -firefox -site amazon.com -collect -shuffle -queue amz-com.txt
-          ./bin/amzdata -firefox -remote "$URL" -site amazon.com -queue amz-com.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes 130 -pause 1s -settle 1s
+          END=$((SECONDS + 155*60))
+          while [ $((END - SECONDS)) -gt 300 ]; do
+            LEFT=$(( (END - SECONDS) / 60 ))
+            ./bin/amzdata -firefox -site amazon.com -collect -shuffle -queue amz-com.txt || true
+            ./bin/amzdata -firefox -remote "$URL" -site amazon.com -queue amz-com.txt -shuffle -n "${{ inputs.amazon_n || '1000000' }}" -minutes "$((LEFT-5))" -pause 1s -settle 1s || true
+            sleep 60
+          done
+
+  again:
+    # when every job is done, start the whole crawl again (not when the run was cancelled)
+    needs: [lemmy, discourse, languages, amazon]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: start the next run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run forumcrawl.yml --repo "$GITHUB_REPOSITORY" --ref "${{ github.ref_name }}" \
+            -f only="${{ inputs.only }}" -f ingest_url="${{ inputs.ingest_url }}"

@@ -3,7 +3,7 @@ name: flowcrawl
 # The Flowsearch crawl: ONE crawler per run. It reads the sites of crawler/seeds-tranco.txt followed by crawler/seeds-discovered.txt (the sites the
 # crawl found itself), follows links to other websites, and sends the ingest ONE request every time exactly 500 new pages are ready.
 # GitHub stops a job after 6 hours. So the crawler stops by itself after 5 hours 45 minutes (no new site is started, the running ones are finished,
-# the last pages are sent), and a second job waits 55 minutes and then starts the next run at the place where this one stopped.
+# the last pages are sent), and a second job waits 4 minutes and then starts the next run at the place where this one stopped.
 # Start it by hand (Actions > flowcrawl > Run workflow); after that it keeps itself going. Cancel the run to stop the chain.
 on:
   workflow_dispatch:
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - name: wait 55 minutes, then start the next run
+      - name: wait 4 minutes, then start the next run
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -85,8 +85,8 @@ jobs:
           if [ -z "$NEXT" ]; then NEXT="${{ inputs.start_site }}"; fi
           if [ -z "$NEXT" ]; then NEXT=$(( ${{ inputs.first_batch }} * 500 )); fi
           if [ -n "$TOTAL" ] && [ "$NEXT" -ge "$TOTAL" ]; then NEXT=0; fi   # the whole list is read: start again at the top
-          echo "the next run starts at site $NEXT, in 55 minutes"
-          sleep 3300
+          echo "the next run starts at site $NEXT, in 4 minutes"
+          sleep 240
           gh workflow run flowcrawl.yml --repo "$GITHUB_REPOSITORY" \
             -f ingest_url="${{ inputs.ingest_url }}" -f start_site="$NEXT" \
             -f batches="${{ inputs.batches }}" -f pages_per_site="${{ inputs.pages_per_site }}"

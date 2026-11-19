@@ -1,0 +1,2 @@
+# hosts where at least 80% of the (5 or more) communities are NSFW: a suggestion for the host block list
+

@@ -1,0 +1,12 @@
+{
+ "hosts": 1039,
+ "lemmy_hosts": 208,
+ "communities": 18092,
+ "nsfw_communities": 794,
+ "failed": {
+  "lemmy.halstead.host": "page 1: URLError",
+  "lemmy.world": "page 101: HTTPError"
+ },
+ "started": "2026-11-19T14:49:49Z",
+ "finished": "2026-11-19T14:51:55Z"
+}

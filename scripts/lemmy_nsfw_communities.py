@@ -10,7 +10,7 @@ Polite: one host is read by one thread, 0.5 s between pages, 50 communities a pa
   lemmy_nsfw_communities.py hosts.txt outdir [--max-hosts N] [--max-pages N]
 
 writes in outdir:
-  nsfw-communities.txt   one community name per line (lowercase, without c/): what Flowsearch hides
+  nsfw-communities.txt   one line per community: name@server (lowercase, without c/): what Flowsearch hides
   nsfw-instances.txt     hosts where almost every community is NSFW (a suggestion for the host block list; not applied by itself)
   report.json            how many hosts, Lemmy hosts, communities, NSFW communities, and which hosts failed
 """
@@ -37,25 +37,32 @@ def read_host(host, max_pages):
         return False, 0, [], f"not Lemmy or not reachable: {type(e).__name__}"
     if not isinstance(site, dict) or "site_view" not in site:
         return False, 0, [], "not Lemmy"
-    seen, nsfw, err = 0, [], ""
-    for page in range(1, max_pages + 1):
-        try:
-            d = get(f"https://{host}/api/v3/community/list?type_=Local&sort=New&limit={PAGE}&page={page}&show_nsfw=true")
-        except Exception as e:
-            err = f"page {page}: {type(e).__name__}"
+    seen_ids, nsfw, err = set(), set(), ""
+    # a server stops listing after a few thousand communities (the biggest one at page 100), so a big server is read in more than one
+    # order (newest first, oldest first, most subscribers); a small server is finished with the first order
+    for sort in ("New", "Old", "TopAll"):
+        finished = False
+        for page in range(1, max_pages + 1):
+            try:
+                d = get(f"https://{host}/api/v3/community/list?type_=Local&sort={sort}&limit={PAGE}&page={page}&show_nsfw=true")
+            except Exception as e:
+                err = f"{sort} page {page}: {type(e).__name__}"
+                break
+            items = d.get("communities") or []
+            for it in items:
+                c = it.get("community") or {}
+                if c.get("id") is not None:
+                    seen_ids.add(c["id"])
+                if c.get("nsfw") and c.get("name"):
+                    nsfw.add(c["name"].lower())
+            if len(items) < PAGE:
+                finished = True
+                break
+            time.sleep(DELAY)
+        if finished:
+            err = ""
             break
-        items = d.get("communities") or []
-        if not items:
-            break
-        for it in items:
-            c = it.get("community") or {}
-            seen += 1
-            if c.get("nsfw") and c.get("name"):
-                nsfw.append(c["name"].lower())
-        if len(items) < PAGE:
-            break
-        time.sleep(DELAY)
-    return True, seen, nsfw, err
+    return True, len(seen_ids), sorted(nsfw), err
 
 
 def main():
@@ -83,7 +90,7 @@ def main():
                 report["lemmy_hosts"] += 1
                 report["communities"] += seen
                 report["nsfw_communities"] += len(nsfw)
-                names.update(nsfw)
+                names.update(f"{n}@{h}" for n in nsfw)   # the name and its server: the same name on another server may be harmless
                 if seen >= 5 and len(nsfw) / seen >= 0.8:
                     nsfw_hosts.append(h)
                 if err:

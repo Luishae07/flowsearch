@@ -43,11 +43,23 @@ jobs:
                   time.sleep(0.25)
               raise SystemExit("Chrome did not start")
 
+          async def dial():
+              # the server may be restarting or a connection may fail: try again every 2 seconds for up to 40 seconds
+              last = None
+              for _ in range(20):
+                  try:
+                      return await connect("wss://flowsearch.org/api/browserjob/runner?id=" + ID,
+                                           additional_headers={"Authorization": "Bearer " + TOKEN},
+                                           max_size=None, ping_interval=None, open_timeout=15)
+                  except Exception as e:
+                      last = e
+                      await asyncio.sleep(2)
+              raise last
+
           async def main():
               page = page_ws()
-              async with connect("wss://flowsearch.org/api/browserjob/runner?id=" + ID, additional_headers={"Authorization": "Bearer " + TOKEN},
-                                 max_size=None, ping_interval=None, open_timeout=30) as srv, \
-                         connect(page, max_size=None, ping_interval=None, origin=None) as chrome_ws:
+              srv_conn = await dial()
+              async with srv_conn as srv, connect(page, max_size=None, ping_interval=None, origin=None) as chrome_ws:
                   async def up():      # from the server to Chrome
                       async for m in srv:
                           await chrome_ws.send(m)
